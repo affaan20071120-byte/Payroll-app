@@ -1,20 +1,19 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Neon Payroll Hub 🚀
 
-# Run and deploy your AI Studio app
+An advanced, neon-themed payroll management system built with React, Vite, and Tailwind CSS.
 
-This contains everything you need to run your app locally.
+## Features
+- 👥 Employee management and salary tracking
+- 📊 Real-time payroll visualisations
+- 🤖 AI-powered payroll assistant
+- 🔒 Secure authentication system
+- 📄 PDF export for payroll statements
 
-View your app in AI Studio: https://ai.studio/apps/22cde0b4-530c-40ea-8307-afa332f66a49
+## Tech Stack
+- **Frontend**: React, TypeScript, Tailwind CSS
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Build Tool**: Vite
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Deployment
+Automatically deployed to GitHub Pages via GitHub Actions.
