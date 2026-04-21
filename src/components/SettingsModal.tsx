@@ -225,31 +225,38 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       return;
                     }
                     try {
-                      alert("⏳ Testing Key with a real AI call... Please wait.");
-                      // Fix: Exact sanitization that kills Header errors
+                      alert("⏳ Testing Key with Bulletproof Method... Please wait.");
+                      // Step 1: Nuclear Sanitization (ASCII Only)
                       const cleanKey = localSettings.geminiApiKey.trim().replace(/[^\x21-\x7E]/g, '');
                       
-                      const { GoogleGenAI } = await import("@google/genai");
-                      const genAI = new GoogleGenAI(cleanKey);
-                      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                      // Step 2: Bypass Header Validation using URL Parameter
+                      // This avoids the "Failed to execute 'append' on 'Headers'" error entirely.
+                      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
                       
-                      // Fix: Standard generative model call
-                      const result = await model.generateContent("hi");
-                      const response = await result.response;
-                      const text = response.text();
+                      const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          contents: [{ parts: [{ text: "hi" }] }]
+                        })
+                      });
                       
-                      if (text) {
-                        alert("✅ Success! The AI correctly responded. Your key is working perfectly.");
+                      const data = await response.json();
+                      
+                      if (data.error) {
+                        throw new Error(data.error.message || "Invalid API Key");
+                      }
+                      
+                      if (data.candidates && data.candidates[0]) {
+                        alert("✅ SUCCESS! The AI responded. Your key is now validated and sanitized.");
+                        // Save the cleaned key
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
+                      } else {
+                        throw new Error("API returned an empty response. Check your key permissions.");
                       }
                     } catch (e: any) {
-                      console.error("Test Error:", e);
-                      const msg = e.message || "Unknown error";
-                      if (msg.includes('ISO-8859-1')) {
-                        alert("❌ Browser Error: Your key still contains invalid invisible characters. Please re-copy it carefully from Google AI Studio.");
-                      } else {
-                        alert("❌ API Error: " + msg);
-                      }
+                      console.error("Nuclear Test Error:", e);
+                      alert("❌ Error: " + e.message);
                     }
                   }}
                   className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"

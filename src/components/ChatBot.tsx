@@ -44,27 +44,30 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     
     try {
       const rawKey = geminiApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
+      // Step 1: Bulletproof Clean
       const apiKey = rawKey?.trim().replace(/[^\x21-\x7E]/g, '');
       
       if (!apiKey) {
         throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");
       }
 
-      // Standard SDK flow
       const genAI = new GoogleGenAI(apiKey);
       
+      // Step 2: Sanitize context to prevent any weird character issues
+      const cleanEmployees = employeesContext?.map((e: any) => ({
+        name: e.name?.replace(/[^\x21-\x7E ]/g, '') || 'Emp',
+        job: e.job?.replace(/[^\x21-\x7E ]/g, '') || 'Job',
+        net: e.netSalary || 0
+      }));
+
       const systemInstruction = `You are a highly capable, intelligent AI assistant named PayrollBot.
         Developer: Mohammed Affaan. 
-        Context: The user currently has these employees: ${employeesContext?.map((e: any) => `${e.name} (${e.job}) - Net: ${e.netSalary}`).join(', ') || 'None'}.
-        CRITICAL BEHAVIOR RULE: You MUST answer ANY question the user asks fully and accurately, even if it is completely outside of payroll (general knowledge, games, science, etc.). DO NOT refuse to answer, and DO NOT say your expertise is strictly payroll. Just logically explain what they asked.
-        TONE ENFORCEMENT: Use tasteful emojis.
-        CRITICAL FORMATTING RULE: You MUST strictly analyze the user's prompt for length and format requests and obey them perfectly:
-        - If they ask for "points" or "bulleted points", use ONLY a bulleted list.
-        - If they ask for "short points" or "brief points", give 3-4 very short bullet points.
-        - If they ask for a "letter" or "essay", format it exactly with greeting/sign-off or proper paragraphs.
-        - If they ask for "short essay" or "briefly", keep it under 3-4 short sentences.
-        - IF THEY DO NOT SPECIFY A FORMAT OR LENGTH: Always default to a short, direct, normal response (1-3 sentences max). Do not write long walls of text unless specifically asked.
-        - ALWAYS use markdown for bolding (** text **).`;
+        Context: The user has these employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
+        CRITICAL BEHAVIOR RULE: Answer ANY question.
+        TONE: Use tasteful emojis.
+        FORMATTING: Obey prompt length/format requests perfectly.
+        - DEFAULT: Short, direct (1-3 sentences).
+        - Use markdown for bolding.`.replace(/[^\x00-\x7F]/g, "");
 
       const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
@@ -73,11 +76,11 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
       const history = messages.slice(1).map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
+        parts: [{ text: msg.content?.replace(/[^\x00-\x7F]/g, "") || "" }]
       }));
       
       const chat = model.startChat({ history });
-      const result = await chat.sendMessageStream(userMsg);
+      const result = await chat.sendMessageStream(userMsg.replace(/[^\x00-\x7F]/g, ""));
       
       setIsTyping(false);
       setMessages(prev => [...prev, { role: 'model', content: "" }]);
