@@ -426,7 +426,11 @@ export function PayrollSystem() {
           />
         )}
         {isChatOpen && (
-          <ChatBot onClose={() => setIsChatOpen(false)} employeesContext={employees} />
+          <ChatBot 
+            onClose={() => setIsChatOpen(false)} 
+            employeesContext={employees} 
+            geminiApiKey={settings.geminiApiKey}
+          />
         )}
       </AnimatePresence>
 

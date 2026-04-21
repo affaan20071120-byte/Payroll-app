@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 interface ChatBotProps {
   onClose: () => void;
   employeesContext: any[];
+  geminiApiKey?: string;
 }
 
 interface Message {
@@ -13,7 +14,7 @@ interface Message {
   content: string;
 }
 
-export function ChatBot({ onClose, employeesContext }: ChatBotProps) {
+export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([{
     role: 'model',
     content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
@@ -42,8 +43,15 @@ export function ChatBot({ onClose, employeesContext }: ChatBotProps) {
     setIsTyping(true);
     
     try {
-      // The platform safely injects the key into the frontend in AI Studio.
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      // Use the provided key from settings if available, otherwise fallback to environment variable.
+      const rawKey = geminiApiKey || process.env.GEMINI_API_KEY;
+      const apiKey = rawKey?.trim();
+      
+      if (!apiKey) {
+        throw new Error("API key is missing. Please provide a valid API key in Settings.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const systemInstruction = `You are a highly capable, intelligent AI assistant named PayrollBot.
         Developer: Mohammed Affaan. 
@@ -58,26 +66,44 @@ export function ChatBot({ onClose, employeesContext }: ChatBotProps) {
         - IF THEY DO NOT SPECIFY A FORMAT OR LENGTH: Always default to a short, direct, normal response (1-3 sentences max). Do not write long walls of text unless specifically asked.
         - ALWAYS use markdown for bolding (** text **).`;
 
-      // Memory: Build chat history correctly for the Gemini SDK
-      const chatContents = messages.slice(1).map(msg => ({
+      // Memory: Build chat history correctly for the @google/genai SDK
+      const history = messages.slice(1).map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
         parts: [{ text: msg.content }]
       }));
-      chatContents.push({
+      
+      const contents = history.concat([{
         role: 'user',
         parts: [{ text: userMsg }]
-      });
+      }]);
 
-      const response = await ai.models.generateContent({
+      const streamResponse = await ai.models.generateContentStream({
         model: "gemini-3-flash-preview",
-        contents: chatContents,
+        contents: contents,
         config: {
           systemInstruction: systemInstruction
         }
       });
+      
+      // Initially hide the dots and prepare for text
+      setIsTyping(false);
+      setMessages(prev => [...prev, { role: 'model', content: "" }]);
+      
+      let fullText = "";
+      for await (const chunk of streamResponse) {
+        const chunkText = chunk.text; // Property, not method in @google/genai
+        if (chunkText) {
+          fullText += chunkText;
+          setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1].content = fullText;
+            return newMessages;
+          });
+        }
+      }
 
-      setMessages(prev => [...prev, { role: 'model', content: response.text || "Sorry, I couldn't understand that." }]);
     } catch (err: any) {
+      setIsTyping(false);
       setMessages(prev => [...prev, { role: 'model', content: `⚠️ Error: ${err.message}` }]);
     } finally {
       setIsTyping(false);

@@ -199,6 +199,23 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
               <InputField label="Car Ins." valueKey="carRate" />
             </div>
           </div>
+
+          <div className="space-y-2 col-span-2">
+            <h3 className="text-[#00ffcc] font-semibold mb-2 border-b border-white/10 pb-1">AI Assistant Settings</h3>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+              <label className="block text-white/50 text-[10px] uppercase font-bold mb-1 ml-1">Gemini API Key (For GitHub/Public Hosting)</label>
+              <input
+                type="password"
+                value={localSettings.geminiApiKey || ''}
+                onChange={(e) => setLocalSettings(prev => ({ ...prev, geminiApiKey: e.target.value }))}
+                className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fc5c65] focus:ring-1 focus:ring-[#fc5c65] transition-all"
+                placeholder="Enter your Gemini API Key..."
+              />
+              <p className="text-[10px] text-white/40 mt-1 italic ml-1">
+                Leave blank to use the default AI Studio key. Paste yours here to make the chat work on your public website.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-center gap-4 mt-6">

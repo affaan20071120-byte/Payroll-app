@@ -51,6 +51,7 @@ export interface PayrollSettings {
   healthLabel: string;
   carLabel: string;
   netLabel: string;
+  geminiApiKey?: string;
 }
 
 export const defaultSettings: PayrollSettings = {
@@ -70,5 +71,6 @@ export const defaultSettings: PayrollSettings = {
   taxLabel: 'Tax',
   healthLabel: 'Health Ins.',
   carLabel: 'Car Ins.',
-  netLabel: 'Net'
+  netLabel: 'Net',
+  geminiApiKey: ''
 };
