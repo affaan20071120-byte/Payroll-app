@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { GlowButton } from './GlowButton';
-import { RobotTechBackground } from './RobotTechBackground';
 
 interface LoginProps {
   onLogin: () => void;
@@ -31,8 +30,7 @@ export function Login({ onLogin }: LoginProps) {
 
   if (attempts <= 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <RobotTechBackground />
+      <div className="flex items-center justify-center min-h-screen bg-[#050510]">
         <div className="bg-[#16213e]/80 backdrop-blur-xl border-4 border-red-500 rounded-[25px] p-8 max-w-md w-full text-center">
           <h1 className="text-3xl font-bold text-red-500 mb-4">Access Denied</h1>
           <p className="text-red-400">Maximum login attempts reached. Please refresh to try again.</p>
@@ -42,18 +40,19 @@ export function Login({ onLogin }: LoginProps) {
   }
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen font-sans overflow-hidden">
-      <RobotTechBackground />
-      
+    <div className="relative flex items-center justify-center min-h-screen font-sans overflow-hidden bg-[#050510]">
       {/* Decorative AI scanning lines */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-10">
         <div className="absolute top-0 w-full h-[2px] bg-[#00ffcc] opacity-20 animate-[scan_4s_linear_infinite]" />
         <div className="absolute top-1/4 w-full h-[1px] bg-[#00ff88] opacity-10 animate-[scan_6s_linear_infinite_reverse]" />
       </div>
 
-      <div className="relative z-10 bg-gradient-to-br from-[#0a0a1a]/95 to-[#16213e]/95 backdrop-blur-2xl border-[3px] border-[#00ffcc50] shadow-[0_0_80px_rgba(0,255,204,0.3)] rounded-[35px] p-10 max-w-md w-full transition-all duration-500 hover:shadow-[0_0_100px_rgba(0,255,204,0.4)]">
+      <div className="relative z-20 bg-gradient-to-br from-[#0a0a1a]/95 to-[#16213e]/95 backdrop-blur-3xl border-[3px] border-[#00ffcc50] shadow-[0_0_100px_rgba(0,255,204,0.4)] rounded-[35px] p-10 max-w-md w-full transition-all duration-500">
         
-        {/* AI Scanner Section */}
+        {/* Version Badge for Troubleshooting */}
+        <div className="absolute -top-3 -right-3 bg-[#00ffcc] text-[#050510] text-[9px] font-black px-2 py-0.5 rounded-full shadow-[0_0_10px_#00ffcc] z-50">
+          V1.3.1
+        </div>
         <div className="flex flex-col items-center mb-8 relative">
            <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#00ffcc] flex items-center justify-center p-3 animate-[spin_10s_linear_infinite] mb-4">
               <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#00ffcc] to-transparent opacity-20" />

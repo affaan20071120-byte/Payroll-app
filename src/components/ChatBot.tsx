@@ -128,9 +128,9 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
             <div>
               <h2 className="text-[#fd79a8] font-bold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(253,121,168,0.8)] leading-none">PayrollBot</h2>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${(geminiApiKey && geminiApiKey.length > 5) ? 'bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]' : 'bg-red-500 shadow-[0_0_5px_#ef4444]'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${((geminiApiKey && geminiApiKey.length > 5) || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]' : 'bg-red-500 shadow-[0_0_5px_#ef4444]'}`}></div>
                 <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">
-                  {(geminiApiKey && geminiApiKey.length > 5) ? 'AI Active' : 'AI Offline (No Key)'}
+                  {((geminiApiKey && geminiApiKey.length > 5) || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'AI Online' : 'AI Offline (No Key)'}
                 </span>
               </div>
             </div>
