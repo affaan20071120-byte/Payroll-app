@@ -235,8 +235,8 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
 
                       const cleanKey = scrub(localSettings.geminiApiKey || '');
                       
-                      if (!cleanKey || cleanKey.length < 20) {
-                        throw new Error("Key is too short or empty after cleaning.");
+                      if (!cleanKey) {
+                        throw new Error("Key is empty after cleaning. Please paste a valid key.");
                       }
 
                       const { GoogleGenAI } = await import("@google/genai");

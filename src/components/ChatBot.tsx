@@ -75,9 +75,15 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         TONE: Use tasteful emojis.
         FORMATTING: Keep it short (1-3 sentences).`.replace(/[^\x00-\x7F]/g, "");
 
+      const history = messages.slice(1).map(msg => ({
+        role: msg.role === 'model' ? 'model' : 'user',
+        parts: [{ text: msg.content?.replace(/[^\x00-\x7F]/g, "") || "" }]
+      }));
+
       // CORRECT CHAT PATTERN (from gemini-api skill)
       const chat = ai.chats.create({
         model: "gemini-3-flash-preview",
+        history: history,
         config: { systemInstruction }
       });
 
