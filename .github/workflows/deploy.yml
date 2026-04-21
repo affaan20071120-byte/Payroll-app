@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 20
       - name: Install
-        run: npm install --legacy-peer-deps
+        run: npm install --legacy-peer-deps --no-audit --no-fund
       - name: Build
         run: npm run build
       - name: Setup Pages
