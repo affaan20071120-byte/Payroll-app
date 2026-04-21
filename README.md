@@ -15,5 +15,5 @@ An advanced, neon-themed payroll management system built with React, Vite, and T
 - **Icons**: Lucide React
 - **Build Tool**: Vite
 
-## Deployment
-Automatically deployed to GitHub Pages via GitHub Actions.
+## Development
+Built with precision and style. ✨
