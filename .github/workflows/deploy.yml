@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Final Deploy Check
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install dependencies
+      - name: Install
         run: npm install --legacy-peer-deps
       - name: Build
         run: npm run build
@@ -30,6 +30,5 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - name: Deploy
         uses: actions/deploy-pages@v4

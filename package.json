@@ -1,7 +1,8 @@
 {
-  "name": "react-example",
+  "name": "payroll-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.2",
+  "homepage": "https://affaan20071120-byte.github.io/Payroll-app/",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -30,7 +31,7 @@
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "tailwindcss": "^4.1.14",
-    "typescript": "~5.8.2",
+    "typescript": "5.6.3",
     "vite": "^6.2.0"
   }
 }
