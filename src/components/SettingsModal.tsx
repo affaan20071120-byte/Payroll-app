@@ -226,24 +226,30 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                     }
                     try {
                       alert("⏳ Testing Key with a real AI call... Please wait.");
-                      // Sanitize the key before testing
+                      // Fix: Exact sanitization that kills Header errors
                       const cleanKey = localSettings.geminiApiKey.trim().replace(/[^\x21-\x7E]/g, '');
-                      const ai = new (await import("@google/genai")).GoogleGenAI({ apiKey: cleanKey });
                       
-                      // Using the model to actually generate something small to verify the network request
-                      const model = ai.models.get("gemini-1.5-flash");
-                      const result = await model.generateContent({
-                        contents: [{ role: 'user', parts: [{ text: 'hi' }] }]
-                      });
+                      const { GoogleGenAI } = await import("@google/genai");
+                      const genAI = new GoogleGenAI(cleanKey);
+                      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                       
-                      if (result.response) {
+                      // Fix: Standard generative model call
+                      const result = await model.generateContent("hi");
+                      const response = await result.response;
+                      const text = response.text();
+                      
+                      if (text) {
                         alert("✅ Success! The AI correctly responded. Your key is working perfectly.");
-                        // Update the local key with the sanitized one
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
                       }
                     } catch (e: any) {
                       console.error("Test Error:", e);
-                      alert("❌ Error: " + (e.message?.includes('ISO-8859-1') ? "Your key contains invalid invisible characters. I've tried to clean them, but please re-copy the key carefully." : e.message));
+                      const msg = e.message || "Unknown error";
+                      if (msg.includes('ISO-8859-1')) {
+                        alert("❌ Browser Error: Your key still contains invalid invisible characters. Please re-copy it carefully from Google AI Studio.");
+                      } else {
+                        alert("❌ API Error: " + msg);
+                      }
                     }
                   }}
                   className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"
