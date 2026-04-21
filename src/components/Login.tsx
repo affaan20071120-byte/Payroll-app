@@ -14,7 +14,7 @@ export function Login({ onLogin }: LoginProps) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'Mohammed' && password === '20/11/2007') {
+    if (username === 'Mohammed' && password === '20112007') {
       onLogin();
     } else {
       const remaining = attempts - 1;
