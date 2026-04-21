@@ -15,8 +15,32 @@ import { Menu, Search, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function PayrollSystem() {
-  const [tabsData, setTabsData] = useState<Record<number, Employee[]>>({ 1: [] });
-  const [settings, setSettings] = useState<PayrollSettings>(defaultSettings);
+  const [tabsData, setTabsData] = useState<Record<number, Employee[]>>(() => {
+    const saved = localStorage.getItem('payroll_tabs_data');
+    return saved ? JSON.parse(saved) : { 1: [] };
+  });
+
+  const [settings, setSettings] = useState<PayrollSettings>(() => {
+    const saved = localStorage.getItem('payroll_settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return defaultSettings;
+      }
+    }
+    return defaultSettings;
+  });
+
+  // Save everything whenever it changes
+  React.useEffect(() => {
+    localStorage.setItem('payroll_settings', JSON.stringify(settings));
+  }, [settings]);
+
+  React.useEffect(() => {
+    localStorage.setItem('payroll_tabs_data', JSON.stringify(tabsData));
+  }, [tabsData]);
+
   const [search, setSearch] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTableVisible, setIsTableVisible] = useState(true);
@@ -37,7 +61,15 @@ export function PayrollSystem() {
   const [deleteMode, setDeleteMode] = useState<'selected' | 'all'>('selected');
 
   // Tabs state
-  const [tabs, setTabs] = useState([{ id: 1, title: 'Payroll 1' }]);
+  const [tabs, setTabs] = useState(() => {
+    const saved = localStorage.getItem('payroll_tabs');
+    return saved ? JSON.parse(saved) : [{ id: 1, title: 'Payroll 1' }];
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('payroll_tabs', JSON.stringify(tabs));
+  }, [tabs]);
+
   const [activeTab, setActiveTab] = useState(1);
   const employees = tabsData[activeTab] || [];
 
