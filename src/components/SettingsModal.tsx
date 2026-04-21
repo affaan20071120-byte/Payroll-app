@@ -225,37 +225,37 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       return;
                     }
                     try {
-                      alert("⏳ Final Test: Connecting to Stable v1 API... Please wait.");
-                      // Step 1: Scrub the key
-                      const cleanKey = localSettings.geminiApiKey.trim().replace(/[^\x21-\x7E]/g, '');
+                      alert("⏳ Final Verification: Sanitizing & Testing... Please wait.");
+                      // Step 1: Scrub the key (No invisible junk)
+                      const raw = localSettings.geminiApiKey || '';
+                      const cleanKey = raw.trim().replace(/[^\x21-\x7E]/g, '');
                       
-                      // Step 2: Use Stable v1 Endpoint (Bypass Beta issues)
-                      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
-                      
-                      const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          contents: [{ parts: [{ text: "Hello" }] }]
-                        })
-                      });
-                      
-                      const data = await response.json();
-                      
-                      if (data.error) {
-                        // If v1 fails, show the exact error from Google
-                        throw new Error(data.error.message || "API Rejected Key");
+                      if (!cleanKey) {
+                        throw new Error("Key is empty after cleaning. Please paste a valid key.");
                       }
+
+                      const { GoogleGenAI } = await import("@google/genai");
+                      const genAI = new GoogleGenAI(cleanKey);
                       
-                      if (data.candidates) {
-                        alert("✅ VICTORY! The Stable API responded. Your key is 100% active.");
+                      // Step 2: Use the model v1beta (most compatible for flash)
+                      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                      
+                      const result = await model.generateContent("hi");
+                      const response = await result.response;
+                      const text = response.text();
+                      
+                      if (text) {
+                        alert("✅ TOTAL SUCCESS! The AI correctly responded. Your key is now working and cleaned.");
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
-                      } else {
-                        throw new Error("Key is valid but quota is empty or model is disabled.");
                       }
                     } catch (e: any) {
-                      console.error("Test Error:", e);
-                      alert("❌ Error: " + e.message);
+                      console.error("SDK Test Error:", e);
+                      const msg = e.message || "Unknown error";
+                      if (msg.includes('ISO-8859-1')) {
+                        alert("❌ Browser Error: Key contains invalid hidden characters. Please re-copy it carefully.");
+                      } else {
+                        alert("❌ API Error: " + msg);
+                      }
                     }
                   }}
                   className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"
