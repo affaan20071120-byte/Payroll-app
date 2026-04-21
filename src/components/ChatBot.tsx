@@ -45,7 +45,10 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     try {
       // Use the provided key from settings if available, otherwise fallback to environment variable.
       const rawKey = geminiApiKey || process.env.GEMINI_API_KEY;
-      const apiKey = rawKey?.trim();
+      
+      // CRITICAL FIX: Sanitize the key. 
+      // Remove any non-printable characters or whitespace that cause "Headers" errors in browsers.
+      const apiKey = rawKey?.trim().replace(/[^\x20-\x7E]/g, '');
       
       if (!apiKey) {
         throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");
