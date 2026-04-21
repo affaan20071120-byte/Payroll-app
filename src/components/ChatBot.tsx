@@ -44,16 +44,24 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     
     try {
       const rawKey = geminiApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
-      // Step 1: Bulletproof Clean
-      const apiKey = rawKey?.trim().replace(/[^\x21-\x7E]/g, '');
+      
+      const scrubKey = (key: string) => {
+        if (!key) return '';
+        let s = key.trim();
+        s = s.replace(/^(GEMINI_API_KEY|key|apikey)[:=\s]*/i, '');
+        s = s.replace(/['"]/g, '');
+        return s.replace(/[^\x21-\x7E]/g, '').trim();
+      };
+
+      const apiKey = scrubKey(rawKey || '');
       
       if (!apiKey) {
         throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");
       }
 
-      const genAI = new GoogleGenAI(apiKey);
+      // CORRECT SDK INITIALIZATION (from gemini-api skill)
+      const ai = new GoogleGenAI({ apiKey });
       
-      // Step 2: Sanitize context to prevent any weird character issues
       const cleanEmployees = employeesContext?.map((e: any) => ({
         name: e.name?.replace(/[^\x21-\x7E ]/g, '') || 'Emp',
         job: e.job?.replace(/[^\x21-\x7E ]/g, '') || 'Job',
@@ -65,29 +73,25 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         Context: The user has these employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
         CRITICAL BEHAVIOR RULE: Answer ANY question.
         TONE: Use tasteful emojis.
-        FORMATTING: Obey prompt length/format requests perfectly.
-        - DEFAULT: Short, direct (1-3 sentences).
-        - Use markdown for bolding.`.replace(/[^\x00-\x7F]/g, "");
+        FORMATTING: Keep it short (1-3 sentences).`.replace(/[^\x00-\x7F]/g, "");
 
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction
+      // CORRECT CHAT PATTERN (from gemini-api skill)
+      const chat = ai.chats.create({
+        model: "gemini-3-flash-preview",
+        config: { systemInstruction }
       });
 
-      const history = messages.slice(1).map(msg => ({
-        role: msg.role === 'model' ? 'model' : 'user',
-        parts: [{ text: msg.content?.replace(/[^\x00-\x7F]/g, "") || "" }]
-      }));
-      
-      const chat = model.startChat({ history });
-      const result = await chat.sendMessageStream(userMsg.replace(/[^\x00-\x7F]/g, ""));
+      // Prepare message content (removing non-ASCII)
+      const cleanUserMsg = userMsg.replace(/[^\x00-\x7F]/g, "");
+      const streamResponse = await chat.sendMessageStream({ message: cleanUserMsg });
       
       setIsTyping(false);
       setMessages(prev => [...prev, { role: 'model', content: "" }]);
       
       let fullText = "";
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
+      for await (const chunk of streamResponse) {
+        // CORRECT TEXT ACCESSOR: .text property, not .text() method
+        const chunkText = chunk.text;
         if (chunkText) {
           fullText += chunkText;
           setMessages(prev => {

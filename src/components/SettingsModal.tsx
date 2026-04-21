@@ -225,37 +225,36 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       return;
                     }
                     try {
-                      alert("⏳ Final Verification: Sanitizing & Testing... Please wait.");
-                      // Step 1: Scrub the key (No invisible junk)
-                      const raw = localSettings.geminiApiKey || '';
-                      const cleanKey = raw.trim().replace(/[^\x21-\x7E]/g, '');
+                      alert("⏳ Nuclear Verification: Sanitizing & Testing... Please wait.");
+                      const scrub = (k: string) => {
+                        let s = k.trim();
+                        s = s.replace(/^(GEMINI_API_KEY|key|apikey)[:=\s]*/i, '');
+                        s = s.replace(/['"]/g, '');
+                        return s.replace(/[^\x21-\x7E]/g, '').trim();
+                      };
+
+                      const cleanKey = scrub(localSettings.geminiApiKey || '');
                       
-                      if (!cleanKey) {
-                        throw new Error("Key is empty after cleaning. Please paste a valid key.");
+                      if (!cleanKey || cleanKey.length < 20) {
+                        throw new Error("Key is too short or empty after cleaning.");
                       }
 
                       const { GoogleGenAI } = await import("@google/genai");
-                      const genAI = new GoogleGenAI(cleanKey);
+                      const ai = new GoogleGenAI({ apiKey: cleanKey });
                       
-                      // Step 2: Use the model v1beta (most compatible for flash)
-                      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                      // Official SDK pattern for content generation
+                      const response = await ai.models.generateContent({
+                        model: "gemini-3-flash-preview",
+                        contents: "hi"
+                      });
                       
-                      const result = await model.generateContent("hi");
-                      const response = await result.response;
-                      const text = response.text();
-                      
-                      if (text) {
-                        alert("✅ TOTAL SUCCESS! The AI correctly responded. Your key is now working and cleaned.");
+                      if (response.text) {
+                        alert("✅ TOTAL VICTORY! Your key is 100% working and cleaned.");
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
                       }
                     } catch (e: any) {
                       console.error("SDK Test Error:", e);
-                      const msg = e.message || "Unknown error";
-                      if (msg.includes('ISO-8859-1')) {
-                        alert("❌ Browser Error: Key contains invalid hidden characters. Please re-copy it carefully.");
-                      } else {
-                        alert("❌ API Error: " + msg);
-                      }
+                      alert("❌ Key Error: " + (e.message || "Unknown error"));
                     }
                   }}
                   className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"
