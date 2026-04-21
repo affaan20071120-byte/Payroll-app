@@ -232,6 +232,20 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
             Cancel
           </button>
         </div>
+
+        <div className="mt-4 pt-4 border-t border-white/5 flex justify-center">
+          <button 
+            onClick={() => {
+              if (confirm("⚠️ Warning: This will delete ALL employees and reset ALL settings. Proceed?")) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            className="text-[10px] text-red-500/50 hover:text-red-500 font-bold uppercase tracking-widest transition-colors"
+          >
+            Clear All Data & Reset App
+          </button>
+        </div>
       </motion.div>
     </div>
   );

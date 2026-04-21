@@ -24,7 +24,9 @@ export function PayrollSystem() {
     const saved = localStorage.getItem('payroll_settings');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Merge with defaults to ensure new fields like 'geminiApiKey' always exist
+        return { ...defaultSettings, ...parsed };
       } catch (e) {
         return defaultSettings;
       }

@@ -48,7 +48,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       const apiKey = rawKey?.trim();
       
       if (!apiKey) {
-        throw new Error("API key is missing. Please provide a valid API key in Settings.");
+        throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -125,7 +125,15 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fd79a8] to-[#e056fd] flex items-center justify-center text-xl shadow-[0_0_15px_#fd79a8]">
               🤖
             </div>
-            <h2 className="text-[#fd79a8] font-bold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(253,121,168,0.8)]">PayrollBot</h2>
+            <div>
+              <h2 className="text-[#fd79a8] font-bold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(253,121,168,0.8)] leading-none">PayrollBot</h2>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${(geminiApiKey && geminiApiKey.length > 5) ? 'bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]' : 'bg-red-500 shadow-[0_0_5px_#ef4444]'}`}></div>
+                <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">
+                  {(geminiApiKey && geminiApiKey.length > 5) ? 'AI Active' : 'AI Offline (No Key)'}
+                </span>
+              </div>
+            </div>
           </div>
           <button 
             onClick={onClose}
