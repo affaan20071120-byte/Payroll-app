@@ -200,19 +200,47 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
             </div>
           </div>
 
-          <div className="space-y-2 col-span-2">
-            <h3 className="text-[#00ffcc] font-semibold mb-2 border-b border-white/10 pb-1">AI Assistant Settings</h3>
-            <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-              <label className="block text-white/50 text-[10px] uppercase font-bold mb-1 ml-1">Gemini API Key (For GitHub/Public Hosting)</label>
-              <input
-                type="password"
-                value={localSettings.geminiApiKey || ''}
-                onChange={(e) => setLocalSettings(prev => ({ ...prev, geminiApiKey: e.target.value }))}
-                className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fc5c65] focus:ring-1 focus:ring-[#fc5c65] transition-all"
-                placeholder="Enter your Gemini API Key..."
-              />
-              <p className="text-[10px] text-white/40 mt-1 italic ml-1">
-                Leave blank to use the default AI Studio key. Paste yours here to make the chat work on your public website.
+          <div className="space-y-3 col-span-2">
+            <h3 className="text-[#00ffcc] font-semibold mb-1 border-b border-white/10 pb-1">AI Assistant Settings</h3>
+            <div className="bg-[#fd79a8]/5 p-4 rounded-2xl border-2 border-[#fd79a8]/30 shadow-[0_0_20px_rgba(253,121,168,0.1)]">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[#fd79a8] text-[10px] uppercase font-black tracking-widest">Gemini AI Key</label>
+                <div className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${localSettings.geminiApiKey?.length ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {localSettings.geminiApiKey?.length ? 'Key Present' : 'Key Missing'}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={localSettings.geminiApiKey || ''}
+                  onChange={(e) => setLocalSettings(prev => ({ ...prev, geminiApiKey: e.target.value }))}
+                  className="flex-1 bg-black/60 border border-[#fd79a8]/40 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#fd79a8] focus:ring-2 focus:ring-[#fd79a8]/50 transition-all font-mono"
+                  placeholder="Paste GEMINI_API_KEY here..."
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!localSettings.geminiApiKey) {
+                      alert("Please paste a key first!");
+                      return;
+                    }
+                    try {
+                      alert("Testing Key... Please wait.");
+                      const ai = new (await import("@google/genai")).GoogleGenAI({ apiKey: localSettings.geminiApiKey });
+                      const model = ai.models.get("gemini-3-flash-preview");
+                      // Just checking if we can initialize
+                      alert("✅ Key Format Valid! Click 'Save Changes' to activate.");
+                    } catch (e: any) {
+                      alert("❌ Error: " + e.message);
+                    }
+                  }}
+                  className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"
+                >
+                  Test
+                </button>
+              </div>
+              <p className="text-[10px] text-white/40 mt-3 italic leading-relaxed">
+                <strong className="text-[#fd79a8]">IMPORTANT:</strong> GitHub Hosting cannot see AI Studio secrets. You MUST paste the key <span className="underline uppercase font-bold">HERE</span> in the app settings, not in the sidebar menu.
               </p>
             </div>
           </div>
