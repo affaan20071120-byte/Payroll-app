@@ -42,13 +42,39 @@ export function Login({ onLogin }: LoginProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="relative flex items-center justify-center min-h-screen font-sans overflow-hidden">
       <RobotTechBackground />
-      <div className="bg-gradient-to-br from-[#1a1a2e]/95 to-[#16213e]/95 backdrop-blur-xl border-4 border-[#00ffcc] shadow-[0_0_60px_#00ffcc60] rounded-[30px] p-10 max-w-md w-full">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-[#00ff88] mb-3 drop-shadow-[0_0_10px_#00ff88]">🚀 PAYROLL SYSTEM</h1>
-          <p className="text-[#00ffff] font-bold text-lg drop-shadow-[0_0_5px_#00ffff]">✨ Secure Access Portal</p>
+      
+      {/* Decorative AI scanning lines */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 w-full h-[2px] bg-[#00ffcc] opacity-20 animate-[scan_4s_linear_infinite]" />
+        <div className="absolute top-1/4 w-full h-[1px] bg-[#00ff88] opacity-10 animate-[scan_6s_linear_infinite_reverse]" />
+      </div>
+
+      <div className="relative z-10 bg-gradient-to-br from-[#0a0a1a]/95 to-[#16213e]/95 backdrop-blur-2xl border-[3px] border-[#00ffcc50] shadow-[0_0_80px_rgba(0,255,204,0.3)] rounded-[35px] p-10 max-w-md w-full transition-all duration-500 hover:shadow-[0_0_100px_rgba(0,255,204,0.4)]">
+        
+        {/* AI Scanner Section */}
+        <div className="flex flex-col items-center mb-8 relative">
+           <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#00ffcc] flex items-center justify-center p-3 animate-[spin_10s_linear_infinite] mb-4">
+              <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#00ffcc] to-transparent opacity-20" />
+           </div>
+           <div className="absolute top-6">
+              <div className="w-12 h-12 bg-[#00ffcc]/20 rounded-lg flex items-center justify-center border border-[#00ffcc] animate-pulse">
+                 <span className="text-3xl">🤖</span>
+              </div>
+           </div>
+           <div className="text-center">
+              <h1 className="text-3xl font-black text-[#00ff88] tracking-tighter uppercase mb-1 drop-shadow-[0_0_15px_#00ff8880]">
+                 AI IDENTITY SCAN
+              </h1>
+              <div className="flex items-center justify-center gap-2">
+                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                 <p className="text-[10px] text-[#00ffff] font-mono tracking-[0.2em] uppercase opacity-70">Unauthorized access prohibited</p>
+              </div>
+           </div>
         </div>
+
+        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#00ffcc50] to-transparent mb-8" />
 
         {error ? (
           <div className="text-center mb-6 text-[#ff6b81] font-bold text-sm bg-[#ff6b81]/20 p-4 rounded-xl border border-[#ff6b81]/50 shadow-[0_0_15px_#ff6b8140]">
