@@ -225,37 +225,36 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       return;
                     }
                     try {
-                      alert("⏳ Testing Key with Bulletproof Method... Please wait.");
-                      // Step 1: Nuclear Sanitization (ASCII Only)
+                      alert("⏳ Final Test: Connecting to Stable v1 API... Please wait.");
+                      // Step 1: Scrub the key
                       const cleanKey = localSettings.geminiApiKey.trim().replace(/[^\x21-\x7E]/g, '');
                       
-                      // Step 2: Bypass Header Validation using URL Parameter
-                      // This avoids the "Failed to execute 'append' on 'Headers'" error entirely.
-                      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
+                      // Step 2: Use Stable v1 Endpoint (Bypass Beta issues)
+                      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
                       
                       const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          contents: [{ parts: [{ text: "hi" }] }]
+                          contents: [{ parts: [{ text: "Hello" }] }]
                         })
                       });
                       
                       const data = await response.json();
                       
                       if (data.error) {
-                        throw new Error(data.error.message || "Invalid API Key");
+                        // If v1 fails, show the exact error from Google
+                        throw new Error(data.error.message || "API Rejected Key");
                       }
                       
-                      if (data.candidates && data.candidates[0]) {
-                        alert("✅ SUCCESS! The AI responded. Your key is now validated and sanitized.");
-                        // Save the cleaned key
+                      if (data.candidates) {
+                        alert("✅ VICTORY! The Stable API responded. Your key is 100% active.");
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
                       } else {
-                        throw new Error("API returned an empty response. Check your key permissions.");
+                        throw new Error("Key is valid but quota is empty or model is disabled.");
                       }
                     } catch (e: any) {
-                      console.error("Nuclear Test Error:", e);
+                      console.error("Test Error:", e);
                       alert("❌ Error: " + e.message);
                     }
                   }}
