@@ -1,0 +1,196 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import Markdown from 'react-markdown';
+import { GoogleGenAI } from "@google/genai";
+
+interface ChatBotProps {
+  onClose: () => void;
+  employeesContext: any[];
+}
+
+interface Message {
+  role: 'user' | 'model'; // Changed from 'assistant' to 'model' for compatibility with SDK
+  content: string;
+}
+
+export function ChatBot({ onClose, employeesContext }: ChatBotProps) {
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'model',
+    content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
+  }]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages, isTyping]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
+    
+    const userMsg = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    
+    setIsTyping(true);
+    
+    try {
+      // The platform safely injects the key into the frontend in AI Studio.
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      const systemInstruction = `You are a highly capable, intelligent AI assistant named PayrollBot.
+        Developer: Mohammed Affaan. 
+        Context: The user currently has these employees: ${employeesContext?.map((e: any) => `${e.name} (${e.job}) - Net: ${e.netSalary}`).join(', ') || 'None'}.
+        CRITICAL BEHAVIOR RULE: You MUST answer ANY question the user asks fully and accurately, even if it is completely outside of payroll (general knowledge, games, science, etc.). DO NOT refuse to answer, and DO NOT say your expertise is strictly payroll. Just logically explain what they asked.
+        TONE ENFORCEMENT: Use tasteful emojis.
+        CRITICAL FORMATTING RULE: You MUST strictly analyze the user's prompt for length and format requests and obey them perfectly:
+        - If they ask for "points" or "bulleted points", use ONLY a bulleted list.
+        - If they ask for "short points" or "brief points", give 3-4 very short bullet points.
+        - If they ask for a "letter" or "essay", format it exactly with greeting/sign-off or proper paragraphs.
+        - If they ask for "short essay" or "briefly", keep it under 3-4 short sentences.
+        - IF THEY DO NOT SPECIFY A FORMAT OR LENGTH: Always default to a short, direct, normal response (1-3 sentences max). Do not write long walls of text unless specifically asked.
+        - ALWAYS use markdown for bolding (** text **).`;
+
+      // Memory: Build chat history correctly for the Gemini SDK
+      const chatContents = messages.slice(1).map(msg => ({
+        role: msg.role === 'model' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      }));
+      chatContents.push({
+        role: 'user',
+        parts: [{ text: userMsg }]
+      });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: chatContents,
+        config: {
+          systemInstruction: systemInstruction
+        }
+      });
+
+      setMessages(prev => [...prev, { role: 'model', content: response.text || "Sorry, I couldn't understand that." }]);
+    } catch (err: any) {
+      setMessages(prev => [...prev, { role: 'model', content: `⚠️ Error: ${err.message}` }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#05050f]/80 backdrop-blur-sm" onClick={onClose}></div>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="relative flex flex-col bg-[#1a1a2e]/95 backdrop-blur-2xl border-2 border-[#fd79a8] rounded-3xl max-w-[700px] w-full h-[80vh] shadow-[0_0_80px_rgba(253,121,168,0.3)]"
+      >
+        <div className="flex justify-between items-center p-5 border-b border-[#fd79a8]/30 bg-[#fd79a8]/10 rounded-t-3xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fd79a8] to-[#e056fd] flex items-center justify-center text-xl shadow-[0_0_15px_#fd79a8]">
+              🤖
+            </div>
+            <h2 className="text-[#fd79a8] font-bold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(253,121,168,0.8)]">PayrollBot</h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#ff3366] hover:bg-[#ff4757]/20 transition-colors font-bold shadow-sm"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth custom-scrollbar" ref={scrollRef}>
+          <AnimatePresence initial={false}>
+            {messages.map((m, i) => (
+              <motion.div 
+                key={i} 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div 
+                  className={`max-w-[85%] p-4 text-[15px] font-medium leading-relaxed prose prose-invert prose-p:leading-relaxed prose-pre:bg-black/20 ${
+                    m.role === 'user' 
+                      ? 'bg-gradient-to-br from-[#0080ff] to-[#0056d6] text-white rounded-2xl rounded-br-sm shadow-[0_0_20px_rgba(0,128,255,0.6)] [text-shadow:0_0_8px_rgba(255,255,255,0.4)]'
+                      : 'bg-gradient-to-br from-[#2a1b32] to-[#1a1a2e] text-[#e2e8f0] border border-[#fd79a8]/50 rounded-2xl rounded-bl-sm shadow-[0_0_30px_rgba(253,121,168,0.3)] [text-shadow:0_0_4px_rgba(253,121,168,0.3)]'
+                  }`}
+                >
+                  {m.role === 'user' ? (
+                    <div>{m.content}</div>
+                  ) : (
+                    <div className="markdown-body">
+                       <Markdown
+                         components={{
+                           strong: ({node, ...props}) => <strong className="text-[#fd79a8] drop-shadow-[0_0_8px_rgba(253,121,168,0.6)] font-bold" {...props} />,
+                           li: ({node, ...props}) => <li className="text-[#e2e8f0] marker:text-[#fd79a8]" {...props} />
+                         }}
+                       >{m.content}</Markdown>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+            {isTyping && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="flex justify-start"
+              >
+                <div className="max-w-[85%] p-4 bg-white/5 text-[#fd79a8] border border-[#fd79a8]/30 rounded-2xl rounded-bl-sm flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-2 h-2 bg-[#fd79a8] rounded-full" />
+                    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-2 h-2 bg-[#fd79a8] rounded-full" />
+                    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-2 h-2 bg-[#fd79a8] rounded-full" />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="p-5 border-t border-white/10 bg-black/20 rounded-b-3xl">
+          <div className="relative flex items-end bg-[#16213e] border-2 border-[#fd79a8] rounded-2xl shadow-[0_0_30px_rgba(253,121,168,0.7)] focus-within:border-white focus-within:shadow-[0_0_50px_rgba(253,121,168,1)] transition-all overflow-hidden p-1">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Ask PayrollBot..."
+              className="flex-1 bg-transparent px-4 py-3 min-h-[48px] max-h-[140px] text-[16px] font-bold text-white placeholder-white/60 focus:outline-none resize-none custom-scrollbar [text-shadow:0_0_8px_#fd79a8,0_0_15px_#0080ff] transition-all"
+              rows={1}
+            />
+            <button 
+              onClick={handleSend}
+              disabled={!input.trim() || isTyping}
+              className={`m-2 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                !input.trim() || isTyping 
+                  ? 'bg-[#1a1a2e] text-[#fd79a8]/50 border border-[#fd79a8]/30 shadow-[0_0_15px_rgba(253,121,168,0.2)]' // Soft glowing even when disabled
+                  : 'bg-[#fd79a8] text-[#1a1a2e] shadow-[0_0_25px_#fd79a8,0_0_15px_#0080ff] hover:bg-white hover:shadow-[0_0_40px_#fff,0_0_25px_#fd79a8]' // Hyper glow when ready
+              }`}
+            >
+              <svg className={`drop-shadow-[0_0_6px_rgba(255,255,255,0.9)] transition-all ${!input.trim() || isTyping ? 'opacity-60' : 'opacity-100 scale-110'}`} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+          <div className="text-center mt-2 text-[10px] text-white/30">
+            PayrollBot can make mistakes. Verify important calculations.
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
