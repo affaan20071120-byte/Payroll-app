@@ -225,13 +225,25 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       return;
                     }
                     try {
-                      alert("Testing Key... Please wait.");
-                      const ai = new (await import("@google/genai")).GoogleGenAI({ apiKey: localSettings.geminiApiKey });
-                      const model = ai.models.get("gemini-3-flash-preview");
-                      // Just checking if we can initialize
-                      alert("✅ Key Format Valid! Click 'Save Changes' to activate.");
+                      alert("⏳ Testing Key with a real AI call... Please wait.");
+                      // Sanitize the key before testing
+                      const cleanKey = localSettings.geminiApiKey.trim().replace(/[^\x21-\x7E]/g, '');
+                      const ai = new (await import("@google/genai")).GoogleGenAI({ apiKey: cleanKey });
+                      
+                      // Using the model to actually generate something small to verify the network request
+                      const model = ai.models.get("gemini-1.5-flash");
+                      const result = await model.generateContent({
+                        contents: [{ role: 'user', parts: [{ text: 'hi' }] }]
+                      });
+                      
+                      if (result.response) {
+                        alert("✅ Success! The AI correctly responded. Your key is working perfectly.");
+                        // Update the local key with the sanitized one
+                        setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
+                      }
                     } catch (e: any) {
-                      alert("❌ Error: " + e.message);
+                      console.error("Test Error:", e);
+                      alert("❌ Error: " + (e.message?.includes('ISO-8859-1') ? "Your key contains invalid invisible characters. I've tried to clean them, but please re-copy the key carefully." : e.message));
                     }
                   }}
                   className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"

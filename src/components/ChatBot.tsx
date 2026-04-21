@@ -44,11 +44,11 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     
     try {
       // Use the provided key from settings if available, otherwise fallback to environment variable.
-      const rawKey = geminiApiKey || process.env.GEMINI_API_KEY;
+      const rawKey = geminiApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
       
-      // CRITICAL FIX: Sanitize the key. 
-      // Remove any non-printable characters or whitespace that cause "Headers" errors in browsers.
-      const apiKey = rawKey?.trim().replace(/[^\x20-\x7E]/g, '');
+      // CRITICAL FIX: Match the 'Test' button logic exactly.
+      // Remove all non-ASCII characters and whitespace.
+      const apiKey = rawKey?.trim().replace(/[^\x21-\x7E]/g, '');
       
       if (!apiKey) {
         throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");
@@ -80,8 +80,9 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         parts: [{ text: userMsg }]
       }]);
 
+      // Using gemini-1.5-flash because it matches the successful 'Test' button
       const streamResponse = await ai.models.generateContentStream({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: contents,
         config: {
           systemInstruction: systemInstruction
