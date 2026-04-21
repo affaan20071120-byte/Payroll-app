@@ -21,9 +21,13 @@ jobs:
         with:
           node-version: 22
       - name: Install
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
       - name: Build
-        run: CI=false npm run build
+        run: |
+          echo "Checking dependencies..."
+          ls -R node_modules/jspdf || echo "jspdf missing"
+          echo "Starting Build..."
+          npm run build -- --logLevel info || (echo "Build FAILED" && exit 1)
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
