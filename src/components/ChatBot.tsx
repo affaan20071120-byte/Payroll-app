@@ -44,16 +44,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     
     try {
       const rawKey = geminiApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
-      
-      const scrubKey = (key: string) => {
-        if (!key) return '';
-        let s = key.trim();
-        s = s.replace(/^(GEMINI_API_KEY|key|apikey)[:=\s]*/i, '');
-        s = s.replace(/['"]/g, '');
-        return s.replace(/[^\x21-\x7E]/g, '').trim();
-      };
-
-      const apiKey = scrubKey(rawKey || '');
+      const apiKey = (rawKey || '').trim();
       
       if (!apiKey) {
         throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");

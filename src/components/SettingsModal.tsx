@@ -225,18 +225,12 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       return;
                     }
                     try {
-                      alert("⏳ Nuclear Verification: Sanitizing & Testing... Please wait.");
-                      const scrub = (k: string) => {
-                        let s = k.trim();
-                        s = s.replace(/^(GEMINI_API_KEY|key|apikey)[:=\s]*/i, '');
-                        s = s.replace(/['"]/g, '');
-                        return s.replace(/[^\x21-\x7E]/g, '').trim();
-                      };
-
-                      const cleanKey = scrub(localSettings.geminiApiKey || '');
+                      alert("⏳ Verifying your API Key with Google... Please wait.");
+                      
+                      const cleanKey = (localSettings.geminiApiKey || '').trim();
                       
                       if (!cleanKey) {
-                        throw new Error("Key is empty after cleaning. Please paste a valid key.");
+                        throw new Error("Key is empty. Please paste a valid key.");
                       }
 
                       const { GoogleGenAI } = await import("@google/genai");
