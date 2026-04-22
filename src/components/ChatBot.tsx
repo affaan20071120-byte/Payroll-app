@@ -63,21 +63,28 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       const ai = new GoogleGenAI({ apiKey });
       
       const cleanEmployees = employeesContext?.map((e: any) => ({
-        name: e.name?.replace(/[^\x21-\x7E ]/g, '') || 'Emp',
-        job: e.job?.replace(/[^\x21-\x7E ]/g, '') || 'Job',
+        name: e.name || 'Emp',
+        job: e.job || 'Job',
         net: e.netSalary || 0
       }));
 
-      const systemInstruction = `You are a highly capable, intelligent AI assistant named PayrollBot.
-        Developer: Mohammed Affaan. 
-        Context: The user has these employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
-        CRITICAL BEHAVIOR RULE: Answer ANY question.
-        TONE: Use tasteful emojis.
-        FORMATTING: Keep it short (1-3 sentences).`.replace(/[^\x00-\x7F]/g, "");
+      const systemInstruction = `You are an AI assistant named PayrollBot. Developer: Mohammed Affaan. 
+        Context: The user has employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
+        
+        CRITICAL RULES:
+        1. GREETINGS: If the user simply says "hi", "hello", or greets you, you MUST introduce yourself specifically. Say something like: "Hello! I am **PayrollBot**, how may I help you today?" 
+        2. SEAMLESS TOPIC SWITCHING: For all other questions (especially outside of payroll), DO NOT introduce yourself and DO NOT connect it back to payroll. Just answer the prompt directly and naturally.
+        3. STRICT FORMATTING & LENGTH: You MUST perfectly match the requested length and style. 
+           - 'Paragraph': Write a long, detailed, multi-sentence paragraph.
+           - Specific Word Counts: Obey the exact word count requested.
+           - 'Points': Return a vertical list. Put EACH point on a NEW LINE starting with a number ('1., 2.') or a dash ('-'). NEVER jumble points.
+           - 'Short': 1-2 brief sentences.
+        4. MANDATORY PINK HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
+        5. TONE: Always include tasteful emojis.`;
 
       const history = messages.slice(1).map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
-        parts: [{ text: msg.content?.replace(/[^\x00-\x7F]/g, "") || "" }]
+        parts: [{ text: msg.content || "" }]
       }));
 
       // CORRECT CHAT PATTERN (from gemini-api skill)
@@ -87,9 +94,8 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         config: { systemInstruction }
       });
 
-      // Prepare message content (removing non-ASCII)
-      const cleanUserMsg = userMsg.replace(/[^\x00-\x7F]/g, "");
-      const streamResponse = await chat.sendMessageStream({ message: cleanUserMsg });
+      // Prepare message content
+      const streamResponse = await chat.sendMessageStream({ message: userMsg });
       
       setIsTyping(false);
       setMessages(prev => [...prev, { role: 'model', content: "" }]);
@@ -172,7 +178,10 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
                        <Markdown
                          components={{
                            strong: ({node, ...props}) => <strong className="text-[#fd79a8] drop-shadow-[0_0_8px_rgba(253,121,168,0.6)] font-bold" {...props} />,
-                           li: ({node, ...props}) => <li className="text-[#e2e8f0] marker:text-[#fd79a8]" {...props} />
+                           ul: ({node, ...props}) => <ul className="list-disc list-outside pl-5 my-2 space-y-1" {...props} />,
+                           ol: ({node, ...props}) => <ol className="list-decimal list-outside pl-5 my-2 space-y-1" {...props} />,
+                           li: ({node, ...props}) => <li className="text-[#e2e8f0] marker:text-[#fd79a8]" {...props} />,
+                           p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
                          }}
                        >{m.content}</Markdown>
                     </div>
