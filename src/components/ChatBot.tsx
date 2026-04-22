@@ -106,12 +106,40 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
     } catch (err: any) {
       setIsTyping(false);
+      const errorMsg = err.message || "";
+      
       // Suppress annoying JSON/Steam errors if we already got the text successfully
-      if (err.message && err.message.includes('JSON') && fullText.length > 0) {
+      if (errorMsg.includes('JSON') && fullText.length > 0) {
         console.warn("Stream cleanly cut off ignored", err);
         return;
       }
-      setMessages(prev => [...prev, { role: 'model', content: `⚠️ Error: ${err.message}` }]);
+      
+      // Cleanly handle 503 Server Overload / High Demand
+      if (errorMsg.includes('503') || errorMsg.includes('high demand') || errorMsg.includes('UNAVAILABLE')) {
+        setMessages(prev => [...prev, { role: 'model', content: "⚠️ **Google AI Servers Busy:** The Gemini AI model is currently experiencing a temporary spike in high demand globally. Please wait a few seconds and try again. 🔄" }]);
+        return;
+      }
+      
+      // Cleanly handle 429 Quota Exceeded / Rate Limit
+      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota') || errorMsg.includes('rate limit')) {
+        setMessages(prev => [...prev, { role: 'model', content: "⚠️ **Free Tier Limit Reached:** You have exceeded the free tier quota for the Gemini API key you provided. Please check your billing details or wait for your daily quota to reset. 💸" }]);
+        return;
+      }
+
+      // Hide the ugly JSON wrapper if Google sends it
+      let readableError = errorMsg;
+      try {
+        if (errorMsg.startsWith('{')) {
+           const parsed = JSON.parse(errorMsg);
+           if (parsed.error && parsed.error.message) {
+             readableError = typeof parsed.error.message === 'string' ? parsed.error.message : JSON.stringify(parsed.error.message);
+           }
+        }
+      } catch (e) {
+        // Not JSON, ignore
+      }
+
+      setMessages(prev => [...prev, { role: 'model', content: `⚠️ **Error:** ${readableError}` }]);
     } finally {
       setIsTyping(false);
     }
