@@ -42,6 +42,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     
     setIsTyping(true);
     
+    let fullText = "";
     try {
       const rawKey = geminiApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
       const apiKey = (rawKey || '').trim();
@@ -91,9 +92,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       setIsTyping(false);
       setMessages(prev => [...prev, { role: 'model', content: "" }]);
       
-      let fullText = "";
       for await (const chunk of streamResponse) {
-        // CORRECT TEXT ACCESSOR: .text property, not .text() method
         const chunkText = chunk.text;
         if (chunkText) {
           fullText += chunkText;
@@ -107,6 +106,11 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
     } catch (err: any) {
       setIsTyping(false);
+      // Suppress annoying JSON/Steam errors if we already got the text successfully
+      if (err.message && err.message.includes('JSON') && fullText.length > 0) {
+        console.warn("Stream cleanly cut off ignored", err);
+        return;
+      }
       setMessages(prev => [...prev, { role: 'model', content: `⚠️ Error: ${err.message}` }]);
     } finally {
       setIsTyping(false);
