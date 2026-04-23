@@ -19,6 +19,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     role: 'model',
     content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
   }]);
+
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
@@ -74,7 +75,13 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         4. MANDATORY PINK HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
         5. TONE: Always include tasteful emojis.`;
 
-      const history = messages.slice(1).map(msg => ({
+      // INFINITE CHAT ENGINE:
+      // To allow the user to chat infinitely without Google throwing "Quota Exceeded" errors,
+      // we strictly limit the background payload to the last 6 messages. 
+      // The user still sees the full history on their screen, but the API payload stays tiny.
+      const recentMessages = messages.slice(-6);
+      
+      const history = recentMessages.filter(msg => msg.role !== 'model' || msg.content !== "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!").map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
         parts: [{ text: msg.content || "" }]
       }));
@@ -170,12 +177,14 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
               </div>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#ff3366] hover:bg-[#ff4757]/20 transition-colors font-bold shadow-sm"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#ff3366] hover:bg-[#ff4757]/20 transition-colors font-bold shadow-sm"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth custom-scrollbar" ref={scrollRef}>
