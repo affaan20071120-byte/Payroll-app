@@ -45,12 +45,12 @@ export function BreakdownModal({ employee, settings, onClose }: BreakdownModalPr
           🧾 {employee.name} — Salary Breakdown
         </h2>
 
-        <div className="space-y-3 mb-8 bg-black/20 p-5 rounded-2xl border border-white/5">
+        <div className="space-y-3 mb-8 bg-black/20 p-5 rounded-2xl border border-white/5 max-h-[50vh] overflow-y-auto purple-scrollbar">
           {list.map((item, i) => (
             <div key={i}>
               <div className="flex justify-between items-center py-1.5">
                 <span className="text-[#a0a0a0] text-sm font-medium">{item.label}</span>
-                <span className="font-mono font-bold text-base" style={{ color: item.color }}>
+                <span className="font-mono font-bold text-base text-right" style={{ color: item.color }}>
                   {item.value}
                 </span>
               </div>

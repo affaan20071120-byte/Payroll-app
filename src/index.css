@@ -60,6 +60,28 @@
     background: rgba(0, 210, 255, 0.7);
   }
 
+  /* Orange default for Edit mode */
+  .orange-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 107, 53, 0.4) rgba(11, 11, 26, 0.8);
+  }
+  .orange-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .orange-scrollbar::-webkit-scrollbar-track {
+    background: rgba(11, 11, 26, 0.8);
+    border-radius: 4px;
+    border-left: 1px solid rgba(255, 107, 53, 0.1);
+  }
+  .orange-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.4);
+    border-radius: 4px;
+  }
+  .orange-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 53, 0.7);
+  }
+
   /* Bright Blue Top Bar Scrollbar */
   .blue-horizontal-scrollbar::-webkit-scrollbar-track {
     background: rgba(10, 10, 20, 0.9);
@@ -72,6 +94,27 @@
   }
   .blue-horizontal-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 210, 255, 0.9);
+  }
+
+  /* Purple default for Breakdown Modal */
+  .purple-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(224, 86, 253, 0.4) transparent;
+  }
+  .purple-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .purple-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+    border-left: 1px solid rgba(224, 86, 253, 0.1);
+  }
+  .purple-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(224, 86, 253, 0.4);
+    border-radius: 4px;
+  }
+  .purple-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(224, 86, 253, 0.7);
   }
 }
 

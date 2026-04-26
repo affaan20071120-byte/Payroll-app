@@ -11,6 +11,7 @@ import { SettingsModal } from './SettingsModal';
 import { LiveGraphModal } from './LiveGraphModal';
 import { DeleteModal } from './DeleteModal';
 import { exportToPDF } from '../lib/pdf-export';
+import { exportToExcel } from '../lib/excel-export';
 import { Menu, Search, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -141,8 +142,7 @@ export function PayrollSystem() {
       handleSetEmployees(employees.map(e => e.empNo === emp.empNo ? emp : e));
     } else {
       if (employees.some(e => e.empNo === emp.empNo)) {
-         alert("Employee Number already exists!");
-         return;
+         throw new Error("Employee Number already exists!");
       }
       handleSetEmployees([...employees, emp]);
     }
@@ -162,11 +162,9 @@ export function PayrollSystem() {
 
   const handleRowClick = (empNo: number, e: React.MouseEvent) => {
     const newSelected = new Set(selectedEmpIds);
-    if (e.ctrlKey || e.metaKey) {
-      if (newSelected.has(empNo)) newSelected.delete(empNo);
-      else newSelected.add(empNo);
+    if (newSelected.has(empNo)) {
+      newSelected.delete(empNo);
     } else {
-      newSelected.clear();
       newSelected.add(empNo);
     }
     setSelectedEmpIds(newSelected);
@@ -281,6 +279,23 @@ export function PayrollSystem() {
                   <GlowButton color="#9b59b6" glowColor="#9b59b6" onClick={() => exportToPDF(selectedEmpIds.size > 0 ? employees.filter(e => selectedEmpIds.has(e.empNo)) : employees)} className="py-4 text-sm font-bold tracking-wider uppercase shadow-[0_0_18px_rgba(155,89,182,0.5)]">
                      📄 Export PDF
                   </GlowButton>
+                  <GlowButton color="#20bf6b" glowColor="#20bf6b" onClick={() => exportToExcel(selectedEmpIds.size > 0 ? employees.filter(e => selectedEmpIds.has(e.empNo)) : employees)} className="py-4 text-sm font-bold tracking-wider uppercase shadow-[0_0_18px_rgba(32,191,107,0.5)]">
+                     📊 Export Excel (CSV)
+                  </GlowButton>
+                  <GlowButton 
+                    color="#45aaf2" 
+                    glowColor="#45aaf2" 
+                    onClick={() => {
+                       if (selectedEmpIds.size === employees.length) {
+                           setSelectedEmpIds(new Set()); // deselect all
+                       } else {
+                           setSelectedEmpIds(new Set(employees.map(e => e.empNo))); // select all
+                       }
+                    }} 
+                    className="py-4 text-sm font-bold tracking-wider uppercase shadow-[0_0_18px_rgba(69,170,242,0.5)]"
+                  >
+                     ☑️ {selectedEmpIds.size === employees.length ? "Deselect All" : "Select All"}
+                  </GlowButton>
                   <GlowButton color="#00e5ff" glowColor="#00e5ff" onClick={() => setIsSortOpen(true)} className="py-4 text-sm font-bold tracking-wider uppercase shadow-[0_0_15px_rgba(0,229,255,0.4)]">
                      🔃 Sort Table
                   </GlowButton>
@@ -330,7 +345,7 @@ export function PayrollSystem() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name or employee number..."
-                className="w-full bg-[#161625]/80 backdrop-blur-sm border-2 border-[#00d2ff] rounded-full pl-11 pr-5 py-3 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#00ffff] focus:ring-4 focus:ring-[#00ffff]/30 transition-all shadow-[0_0_40px_10px_rgba(0,210,255,0.6)]"
+                className="w-full bg-[#161625]/80 backdrop-blur-sm border-2 border-[#00d2ff] rounded-full pl-11 pr-5 py-3 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#00ffff] focus:ring-4 focus:ring-[#00ffff]/30 transition-all shadow-[0_0_15px_rgba(0,210,255,0.2)] focus:shadow-[0_0_40px_10px_rgba(0,210,255,0.6)]"
               />
             </div>
           </div>
@@ -374,32 +389,32 @@ export function PayrollSystem() {
                           key={emp.empNo} 
                           onClick={(e) => handleRowClick(emp.empNo, e)}
                           className={`cursor-pointer transition-all ${
-                            isSelected ? 'bg-[#00d2ff]/20' : 'bg-[#1a1a2e]/20 hover:bg-[#00d2ff]/10'
+                            isSelected ? 'bg-[#00d2ff]/30 backdrop-blur-md shadow-[inset_0_0_20px_rgba(0,210,255,0.3)]' : 'bg-[#1a1a2e]/40 hover:bg-[#00d2ff]/10 even:bg-[#161625]/60'
                           }`}
                         >
-                          <td className={`p-4 font-mono text-cyan-200 border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.empNo}</td>
-                          <td className={`p-4 font-semibold text-sm text-white border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.name}</td>
-                          <td className={`p-4 text-white/90 border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.job}</td>
-                          <td className={`p-4 font-mono text-white/90 border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.basicSalary.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#00ff88] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.da.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#00ff88] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.hra.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#00ff88] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.otherAllowance.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#00d2ff] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.empNo}</td>
+                          <td className={`p-4 whitespace-nowrap font-bold text-sm text-[#a29bfe] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.name}</td>
+                          <td className={`p-4 whitespace-nowrap font-bold text-[#fd79a8] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.job}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#ffeaa7] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.basicSalary.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#20bf6b] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.da.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#20bf6b] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.hra.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#20bf6b] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.otherAllowance.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
                           
                           {/* Dynamic Columns */}
                           {(settings.customAllowances || []).map(ca => (
-                            <td key={ca.id} className={`p-4 font-mono text-[#00ff88] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>
+                            <td key={ca.id} className={`p-4 whitespace-nowrap font-mono font-bold text-[#20bf6b] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>
                               {(emp.customAllowances?.[ca.id] || 0).toLocaleString('en-US', {minimumFractionDigits:2})}
                             </td>
                           ))}
 
-                          <td className={`p-4 font-mono font-semibold text-[#ffa502] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.grossSalary.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#ff4757] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.tax.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#ff4757] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.healthInsurance.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#ff4757] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.carInsurance.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 font-mono text-[#00ffff] font-bold bg-[#00ffff]/10 border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.netSalary.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-                          <td className={`p-4 border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#fbc531] tracking-wide border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.grossSalary.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#eb3b5a] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.tax.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#eb3b5a] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.healthInsurance.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono font-bold text-[#eb3b5a] border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.carInsurance.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap font-mono text-[#00d2ff] font-extrabold tracking-wider border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>{emp.netSalary.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                          <td className={`p-4 whitespace-nowrap border-b ${isSelected ? 'border-t border-b border-[#00d2ff]' : 'border-[#00d2ff]/20'}`}>
                             <div className="flex flex-col gap-2">
-                              <span className="font-mono text-[#feca57] text-xs whitespace-nowrap">{emp.createdAt || '-'}</span>
+                              <span className="font-mono font-bold text-[#feca57] text-xs whitespace-nowrap">{emp.createdAt || '-'}</span>
                               <div className="flex items-center gap-2">
                                 <button onClick={(e) => { e.stopPropagation(); setEditingEmp(emp); setIsFormOpen(true); }} className="hover:scale-125 active:scale-95 transition-transform" title="Edit">✏️</button>
                                 <button onClick={(e) => { e.stopPropagation(); handleSetEmployees(employees.filter(x => x.empNo !== emp.empNo)); }} className="hover:scale-125 active:scale-95 transition-transform" title="Delete">🗑️</button>
@@ -450,7 +465,10 @@ export function PayrollSystem() {
           <SortModal onSort={handleSort} onClose={() => setIsSortOpen(false)} />
         )}
         {isGraphOpen && (
-          <LiveGraphModal employees={employees} onClose={() => setIsGraphOpen(false)} />
+          <LiveGraphModal 
+            employees={selectedEmpIds.size > 0 ? employees.filter(e => selectedEmpIds.has(e.empNo)) : employees} 
+            onClose={() => setIsGraphOpen(false)} 
+          />
         )}
         {isSettingsOpen && (
           <SettingsModal 

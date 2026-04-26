@@ -27,11 +27,27 @@ export function EmployeeForm({ employee, settings, existingEmployees, onSave, on
   const [basicSalary, setBasicSalary] = useState(employee?.basicSalary?.toString() || '');
   
   const [showJobDropdown, setShowJobDropdown] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  const [hiddenJobs, setHiddenJobs] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('payroll_hidden_jobs') || '[]'); } catch { return []; }
+  });
+  
+  const handleHideJob = (j: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const newHidden = [...hiddenJobs, j];
+    setHiddenJobs(newHidden);
+    localStorage.setItem('payroll_hidden_jobs', JSON.stringify(newHidden));
+  };
+
+  const dynamicJobs = Array.from(new Set([...JOBS, ...existingEmployees.map(e => e.job).filter(Boolean)])).filter(j => !hiddenJobs.includes(j));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     if (!empNo || !name || !job || !basicSalary) {
-      alert("Please fill all fields");
+      setErrorMsg("Please fill all fields.");
       return;
     }
 
@@ -39,11 +55,11 @@ export function EmployeeForm({ employee, settings, existingEmployees, onSave, on
     const id = parseInt(empNo, 10);
     
     if (isNaN(basic)) {
-       alert("Basic Salary must be a number");
+       setErrorMsg("Basic Salary must be a number.");
        return;
     }
     if (isNaN(id)) {
-       alert("Employee Number must be a number");
+       setErrorMsg("Employee Number must be a number.");
        return;
     }
 
@@ -52,25 +68,29 @@ export function EmployeeForm({ employee, settings, existingEmployees, onSave, on
       tax, healthInsurance, carInsurance, netSalary 
     } = calculateSalaryComponents(job, basic, settings);
 
-    onSave({
-      empNo: id,
-      name,
-      job,
-      basicSalary: basic,
-      da,
-      hra,
-      otherAllowance,
-      customAllowances,
-      grossSalary,
-      tax,
-      healthInsurance,
-      carInsurance,
-      netSalary,
-      createdAt: employee?.createdAt || new Date().toLocaleString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true
-      })
-    });
+    try {
+      onSave({
+        empNo: id,
+        name,
+        job,
+        basicSalary: basic,
+        da,
+        hra,
+        otherAllowance,
+        customAllowances,
+        grossSalary,
+        tax,
+        healthInsurance,
+        carInsurance,
+        netSalary,
+        createdAt: employee?.createdAt || new Date().toLocaleString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true
+        })
+      });
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to save employee.");
+    }
   };
 
   return (
@@ -81,7 +101,7 @@ export function EmployeeForm({ employee, settings, existingEmployees, onSave, on
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="relative bg-gradient-to-b from-[#1a1a2e]/95 to-[#0b0b1a]/95 backdrop-blur-2xl border rounded-[30px] p-10 max-w-[500px] w-full max-h-[90vh] overflow-y-auto cyan-scrollbar shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+        className={`relative bg-gradient-to-b from-[#1a1a2e]/95 to-[#0b0b1a]/95 backdrop-blur-2xl border rounded-[30px] p-10 max-w-[500px] w-full max-h-[90vh] overflow-y-auto ${isEdit ? 'orange-scrollbar' : 'cyan-scrollbar'} shadow-[0_0_50px_rgba(0,0,0,0.5)]`}
         style={{ borderColor: `${bc}80` }}
       >
         <div className="absolute inset-0 rounded-[30px] shadow-[0_0_30px_inset] pointer-events-none" style={{ color: `${bc}20` }}></div>
@@ -91,6 +111,12 @@ export function EmployeeForm({ employee, settings, existingEmployees, onSave, on
         >
           {isEdit ? `✏️ Edit ${employee.name}` : "✨ Create New Employee"}
         </h2>
+
+        {errorMsg && (
+          <div className="bg-[#ff4757]/10 border border-[#ff4757]/50 text-[#ff4757] px-4 py-3 rounded-xl mb-6 text-sm font-bold text-center animate-pulse">
+            ⚠️ {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
@@ -125,41 +151,61 @@ export function EmployeeForm({ employee, settings, existingEmployees, onSave, on
                 value={job}
                 onChange={(e) => setJob(e.target.value)}
                 onFocus={() => setShowJobDropdown(true)}
-                onBlur={() => setTimeout(() => setShowJobDropdown(false), 200)}
-                className="w-full bg-[#05050f]/50 border-2 rounded-2xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:bg-[#05050f]/80 transition-all font-sans text-lg"
+                onBlur={() => setShowJobDropdown(false)}
+                className="w-full bg-[#05050f]/50 border-2 rounded-2xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:bg-[#05050f]/80 transition-all font-sans text-lg relative z-20"
                 style={{ borderColor: `${bc}50` }}
                 placeholder={`Select ${settings.jobLabel.toLowerCase()}...`}
               />
               <div 
-                className="absolute right-5 top-1/2 -translate-y-1/2 cursor-pointer text-[#00d2ff] opacity-70 hover:opacity-100"
+                className="absolute right-5 top-1/2 -translate-y-1/2 cursor-pointer opacity-70 hover:opacity-100 transition-opacity z-30"
                 onClick={() => setShowJobDropdown(!showJobDropdown)}
+                style={{ color: bc }}
               >
                 ▼
               </div>
             </div>
             
-            <AnimatePresence>
+              <AnimatePresence>
               {showJobDropdown && (
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-10 w-full mt-2 bg-[#0b0b1a] border border-[#00d2ff]/50 rounded-2xl overflow-hidden shadow-2xl"
+                  className="absolute z-[100] w-full mt-2 bg-[#0b0b1a] border rounded-2xl overflow-hidden shadow-2xl"
+                  style={{ borderColor: `${bc}50` }}
                 >
-                  <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                    {JOBS.map(j => (
-                      <div 
-                        key={j} 
-                        className="px-5 py-3 hover:bg-[#00d2ff]/20 cursor-pointer text-white/90 font-medium transition-colors"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setJob(j);
-                          setShowJobDropdown(false);
-                        }}
-                      >
-                        {j}
-                      </div>
-                    ))}
+                  <div className={`max-h-48 overflow-y-auto overflow-x-hidden ${isEdit ? 'orange-scrollbar' : 'cyan-scrollbar'}`}>
+                    <AnimatePresence>
+                      {dynamicJobs.map(j => (
+                        <motion.div 
+                          layout
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          key={j} 
+                          className="px-5 py-3 cursor-pointer text-white/90 font-medium transition-colors hover:bg-white/10 flex justify-between items-center group"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setJob(j);
+                            setShowJobDropdown(false);
+                          }}
+                        >
+                          <span>{j}</span>
+                          <button
+                            type="button"
+                            className="opacity-0 group-hover:opacity-100 text-[#ff4757] hover:bg-[#ff4757]/20 rounded-md px-2 py-1 transition-all"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleHideJob(j, e);
+                            }}
+                            title="Remove from suggestions"
+                          >
+                            ✖
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </motion.div>
               )}
