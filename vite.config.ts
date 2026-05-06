@@ -1,29 +1,20 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import {defineConfig} from 'vite';
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
-  return {
-    base: '/',
-    plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ""),
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  define: {
+    'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || ""),
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), 'src'),
     },
-    resolve: {
-      alias: {
-        '@': path.resolve(process.cwd(), 'src'),
-      },
-    },
-    server: {
-      port: 3000,
-      host: '0.0.0.0'
-    },
-    build: {
-      outDir: 'dist',
-      emptyOutDir: true,
-      sourcemap: false
-    }
-  };
+  },
+  server: {
+    port: 3000,
+    host: '0.0.0.0'
+  }
 });
