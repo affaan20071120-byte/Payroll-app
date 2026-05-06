@@ -2,6 +2,7 @@
   "name": "payroll-app",
   "private": true,
   "version": "1.0.2",
+  "homepage": "https://affaan20071120-byte.github.io/Payroll-app/",
   "type": "module",
   "scripts": {
     "dev": "vite",
