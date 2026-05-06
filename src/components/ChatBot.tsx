@@ -90,17 +90,38 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
       // CORRECT CHAT PATTERN (from gemini-api skill)
       const chat = ai.chats.create({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.1-flash-lite-preview",
         history: history,
         config: { systemInstruction }
       });
 
       // Prepare message content
-      const streamResponse = await chat.sendMessageStream({ message: userMsg });
+      let streamResponse;
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while (retries < maxRetries) {
+        try {
+          streamResponse = await chat.sendMessageStream({ message: userMsg });
+          break; // Success
+        } catch (err: any) {
+          const isBusy = err.message.includes('503') || err.message.includes('high demand') || err.message.includes('UNAVAILABLE');
+          if (isBusy && retries < maxRetries - 1) {
+            retries++;
+            const backoffTime = Math.pow(2, retries) * 1000;
+            console.warn(`Gemini busy, retrying in ${backoffTime}ms (attempt ${retries}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            continue;
+          }
+          throw err; // Not busy error or out of retries
+        }
+      }
       
       setIsTyping(false);
       setMessages(prev => [...prev, { role: 'model', content: "" }]);
       
+      if (!streamResponse) throw new Error("Failed to get response after multiple retries.");
+
       for await (const chunk of streamResponse) {
         const chunkText = chunk.text;
         if (chunkText) {

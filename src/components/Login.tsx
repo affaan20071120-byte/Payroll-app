@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { GlowButton } from './GlowButton';
+import { motion } from 'motion/react';
+import { DuneBackground } from './DuneBackground';
 
 interface LoginProps {
   onLogin: () => void;
@@ -30,102 +31,77 @@ export function Login({ onLogin }: LoginProps) {
 
   if (attempts <= 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#050510]">
-        <div className="bg-[#16213e]/80 backdrop-blur-xl border-4 border-red-500 rounded-[25px] p-8 max-w-md w-full text-center">
+      <div className="flex items-center justify-center min-h-screen bg-[#050505] text-white">
+        <div className="bg-[#111]/80 backdrop-blur-xl border border-red-500/30 rounded-3xl p-8 max-w-md w-full text-center">
           <h1 className="text-3xl font-bold text-red-500 mb-4">Access Denied</h1>
-          <p className="text-red-400">Maximum login attempts reached. Please refresh to try again.</p>
+          <p className="text-red-400">Maximum login attempts reached.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen font-sans overflow-hidden bg-[#050510]">
-      {/* Decorative AI scanning lines */}
-      <div className="fixed inset-0 pointer-events-none z-10">
-        <div className="absolute top-0 w-full h-[2px] bg-[#00ffcc] opacity-20 animate-[scan_4s_linear_infinite]" />
-        <div className="absolute top-1/4 w-full h-[1px] bg-[#00ff88] opacity-10 animate-[scan_6s_linear_infinite_reverse]" />
+    <div className="flex min-h-screen bg-[#050b16] text-white overflow-hidden">
+      {/* Left side: Visualization */}
+      <div className="hidden lg:flex flex-1 relative items-center justify-center bg-[#050b16]">
+        <DuneBackground />
+        
+        <div className="relative z-10 p-12 text-center text-white">
+            <h1 className="text-5xl font-black tracking-tighter mb-6 text-cyan-50 drop-shadow-[0_0_20px_rgba(34,211,238,0.9)]">
+                PAYROLL MANAGEMENT <br/> SYSTEM
+            </h1>
+            <p className="text-cyan-300 font-bold text-lg max-w-sm mx-auto drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]">
+                Secure, efficient, and precise payroll management for your organization.
+            </p>
+        </div>
       </div>
 
-      <div className="relative z-20 bg-gradient-to-br from-[#0a0a1a]/95 to-[#16213e]/95 backdrop-blur-3xl border-[3px] border-[#00ffcc50] shadow-[0_0_100px_rgba(0,255,204,0.4)] rounded-[35px] p-10 max-w-md w-full transition-all duration-500">
-        
-        {/* Version Badge for Troubleshooting */}
-        <div className="absolute -top-3 -right-3 bg-[#00ffcc] text-[#050510] text-[9px] font-black px-2 py-0.5 rounded-full shadow-[0_0_10px_#00ffcc] z-50">
-          V1.3.1
-        </div>
-        <div className="flex flex-col items-center mb-8 relative">
-           <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#00ffcc] flex items-center justify-center p-3 animate-[spin_10s_linear_infinite] mb-4">
-              <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#00ffcc] to-transparent opacity-20" />
-           </div>
-           <div className="absolute top-6">
-              <div className="w-12 h-12 bg-[#00ffcc]/20 rounded-lg flex items-center justify-center border border-[#00ffcc] animate-pulse">
-                 <span className="text-3xl">🤖</span>
-              </div>
-           </div>
-           <div className="text-center">
-              <h1 className="text-3xl font-black text-[#00ff88] tracking-tighter uppercase mb-1 drop-shadow-[0_0_15px_#00ff8880]">
-                 AI IDENTITY SCAN
-              </h1>
-              <div className="flex items-center justify-center gap-2">
-                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                 <p className="text-[10px] text-[#00ffff] font-mono tracking-[0.2em] uppercase opacity-70">Unauthorized access prohibited</p>
-              </div>
-           </div>
-        </div>
-
-        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#00ffcc50] to-transparent mb-8" />
-
-        {error ? (
-          <div className="text-center mb-6 text-[#ff6b81] font-bold text-sm bg-[#ff6b81]/20 p-4 rounded-xl border border-[#ff6b81]/50 shadow-[0_0_15px_#ff6b8140]">
-            {error}
-          </div>
-        ) : (
-          <div className="text-center mb-6 text-[#ffa502] font-bold text-sm drop-shadow-[0_0_5px_#ffa502]">
-            Attempts remaining: {attempts}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-8">
-          <div className="space-y-3">
-            <label className="block text-[#00ffcc] font-bold text-sm tracking-widest uppercase drop-shadow-[0_0_5px_#00ffcc]">👤 Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username"
-              className="w-full bg-[#05050f]/60 backdrop-blur-md border-[2px] border-[#00ffcc] rounded-2xl px-5 py-4 text-white text-lg placeholder-white/40 focus:outline-none focus:border-[3px] focus:shadow-[0_0_20px_#00ffcc50] focus:bg-[#00ffcc]/10 transition-all font-sans"
-              required
-            />
-          </div>
-
-          <div className="space-y-3">
-            <label className="block text-[#00ffcc] font-bold text-sm tracking-widest uppercase drop-shadow-[0_0_5px_#00ffcc]">🔑 Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-full bg-[#05050f]/60 backdrop-blur-md border-[2px] border-[#00ffcc] rounded-2xl px-5 py-4 text-white text-lg placeholder-white/40 focus:outline-none focus:border-[3px] focus:shadow-[0_0_20px_#00ffcc50] focus:bg-[#00ffcc]/10 transition-all font-sans"
-              required
-            />
-          </div>
-
-          <div className="mt-10">
-            <GlowButton
-              type="submit"
-              color="#00ff88"
-              glowColor="#00ff88"
-              enableZoom={true}
-              className="w-full px-8 py-5 text-xl tracking-widest uppercase shadow-[0_0_20px_#00ff8860]"
-            >
-              Login
-            </GlowButton>
+      {/* Right side: Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#000a16]">
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-full max-w-md space-y-8"
+        >
+          <div className="text-center">
+            <h2 className="text-6xl font-black mb-2 text-cyan-200 drop-shadow-[0_0_20px_rgba(34,211,238,0.9)]">Welcome</h2>
           </div>
           
-          <div className="text-xs text-center text-[#00ffcc]/70 mt-6 tracking-wide italic">
-             Access Restricted
-          </div>
-        </form>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+                <label className="text-sm font-semibold text-cyan-300">Username</label>
+                <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                className="w-full bg-[#050b16] border border-white/10 rounded-xl px-4 py-3.5 text-cyan-100 placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-all"
+                required
+                />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-semibold text-cyan-300">Password</label>
+                <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="w-full bg-[#050b16] border border-white/10 rounded-xl px-4 py-3.5 text-cyan-100 placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-all"
+                required
+                />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-[#0d3b66] text-cyan-100 font-bold text-lg rounded-xl hover:bg-[#0d3b66]/90 transition-all shadow-[0_0_15px_rgba(13,59,102,0.4)]"
+            >
+              Sign In
+            </button>
+          </form>
+
+          {error && <div className="text-cyan-100 text-sm bg-cyan-900/20 p-4 rounded-xl border border-cyan-500/30 text-center drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">{error}</div>}
+
+        </motion.div>
       </div>
     </div>
   );

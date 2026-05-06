@@ -93,7 +93,7 @@ export function RobotTechBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full bg-transparent"
+      className="absolute inset-0 w-full h-full bg-transparent"
     />
   );
 }
