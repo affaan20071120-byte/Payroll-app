@@ -169,7 +169,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       if (!cleanKey) throw new Error("Key is empty. Please paste a valid key.");
                       const { GoogleGenAI } = await import("@google/genai");
                       const ai = new GoogleGenAI({ apiKey: cleanKey });
-                      const response = await ai.models.generateContent({ model: "gemini-3-flash-preview", contents: "hi" });
+                      const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: "hi" });
                       if (response.text) {
                         alert("✅ TOTAL VICTORY! Your key is 100% working and cleaned.");
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
@@ -183,7 +183,15 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                   Test Key Connection
                 </button>
                 <button
-                  onClick={() => setShowFileUnlock(false)}
+                  onClick={() => {
+                    setShowFileUnlock(false);
+                    // Autosave if they clicked close file to avoid confusion
+                    const keyToMerge = localSettings.geminiApiKey !== undefined ? localSettings.geminiApiKey : '';
+                    onSave({
+                      ...localSettings,
+                      geminiApiKey: keyToMerge
+                    });
+                  }}
                   className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
                 >
                   <Check size={16} /> Save & Close File

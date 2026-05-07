@@ -49,8 +49,18 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       const rawKey = geminiApiKey || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
       const apiKey = (rawKey || '').trim();
       
+      console.log("ChatBot is using API Key of length: ", apiKey.length, " Starts with: ", apiKey.substring(0, 5));
+
       if (!apiKey) {
-        throw new Error("API Key is missing for GitHub Hosting! Please go to ⚙️ Settings and paste your Gemini API Key to enable the AI.");
+        setMessages(prev => [...prev, { role: 'model', content: "❌ **API Key Missing!** Please go to Settings (⚙️) and paste your Gemini API Key in the 'api_key_secret.txt' file." }]);
+        setIsTyping(false);
+        return;
+      }
+      
+      if (userMsg.toLowerCase() === "debug key") {
+         setMessages(prev => [...prev, { role: 'model', content: `DEBUG INFO: The API Key ChatBot is using starts with **${apiKey.substring(0, 5)}...** and ends with **...${apiKey.substring(apiKey.length - 5)}** (Length: ${apiKey.length}). If this is your OLD key, go back to settings, paste the new one, and hit SAVE CHANGES!` }]);
+         setIsTyping(false);
+         return;
       }
 
       // CORRECT SDK INITIALIZATION (from gemini-api skill)
@@ -109,7 +119,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
       // CORRECT CHAT PATTERN (from gemini-api skill)
       const chat = ai.chats.create({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-2.5-flash",
         history: history,
         config: { systemInstruction }
       });
