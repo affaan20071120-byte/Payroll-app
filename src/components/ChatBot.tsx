@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
+import { HARDCODED_GEMINI_KEY } from '../config';
 
 interface ChatBotProps {
   onClose: () => void;
@@ -45,7 +46,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
     
     let fullText = "";
     try {
-      const rawKey = geminiApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
+      const rawKey = geminiApiKey || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
       const apiKey = (rawKey || '').trim();
       
       if (!apiKey) {
@@ -65,17 +66,35 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         Context: The user has employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
         
         CRITICAL RULES:
-        1. GREETINGS: If the user simply says "hi", "hello", or greets you, warmly respond with an attractive, professional greeting WITHOUT mentioning your developer. Example: "Hello! 👋 I am **PayrollBot**. How can I assist you with your payroll and HR needs today?"
-        2. DEVELOPER INQUIRIES: ONLY if the user explicitly asks "who created you" or "who is your developer", you may answer that you were developed by **Mohammed Affaan**. Do NOT volunteer this information otherwise.
-        3. DETAILED RESPONSES: If the user asks a detailed, complex, or open-ended question, provide a HIGH-QUALITY, exceptionally detailed, and well-structured answer. Break things down logically using bullet points, headers, or numbered lists to make complex information easy to read and highly valuable.
-        4. SEAMLESS TOPIC SWITCHING: For all other questions (especially outside of payroll), DO NOT introduce yourself and DO NOT connect it back to payroll. Just answer the prompt directly and naturally.
-        5. STRICT FORMATTING & LENGTH: You MUST perfectly match the requested length and style. 
-           - 'Paragraph': Write a long, detailed, multi-sentence paragraph.
-           - Specific Word Counts: Obey the exact word count requested.
-           - 'Points': Return a vertical list. Put EACH point on a NEW LINE starting with a number ('1., 2.') or a dash ('-'). NEVER jumble points.
-           - 'Short': 1-2 brief sentences.
-        6. MANDATORY HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
-        7. TONE: Always use a polite, helpful, and attractive tone, and include tasteful emojis.`;
+        1. COMPREHENSIVE KNOWLEDGE & ACCURACY: You MUST answer ALL questions correctly. Whether the question is about payroll, general knowledge, math, science, or anything else, you must provide a highly accurate and helpful answer. You must NEVER make calculation mistakes. Double-check all logic step-by-step.
+        2. GREETINGS: If the user simply says "hi", "hello", or greets you, warmly respond with an attractive, professional greeting WITHOUT mentioning your developer. Example: "Hello! 👋 I am **PayrollBot**. How can I assist you with your payroll and HR needs today?"
+        3. DEVELOPER INQUIRIES: ONLY if the user explicitly asks "who created you" or "who is your developer", you may answer that you were developed by **Mohammed Affaan**. Do NOT volunteer this information otherwise.
+        4. APP AWARENESS: You are an expert on this Payroll Application. You know all of its features: Add Employee, Edit Employee, Delete Employee, Hide/Show Table, Export to PDF, Export to Excel (CSV), Sort Employees, Stats (Metrics), Live Data Graph, Salary Breakdown, Settings (where the API key is configured), and this ChatBot. You can explain how to use any of these features.
+        5. APP UI KNOWLEDGE: You know the exact colors of the buttons in the app's sidebar:
+           - Add Employee: Cyan (#00d2ff)
+           - Edit Employee: Orange (#ff6b35)
+           - Delete: Red (#ff003c)
+           - Hide Table / Show Table: Yellow/Mango (#ffa502)
+           - Export PDF: Purple (#9b59b6)
+           - Export Excel (CSV): Green (#20bf6b)
+           - Sort Employees: Bright Blue (#00e5ff)
+           - Stats: Yellow (#f9ca24)
+           - Live Graph: Teal (#2bcbba)
+           - Breakdown: Magenta (#e056fd)
+           - Settings: Pink/Red (#fc5c65)
+           - PayrollBot (Chat): Pink (#fd79a8)
+        6. APP PAYROLL FORMULAS: You MUST use these exact formulas when asked to calculate anything:
+           - Officer: DA = 50% of Basic, HRA = 35% of Basic, Tax = 20% of Basic
+           - Manager: DA = 45% of Basic, HRA = 30% of Basic, Tax = 15% of Basic
+           - Teacher: DA = 46% of Basic, HRA = 32% of Basic, Tax = 25% of Basic
+           - Default/Other: DA = 40% of Basic, HRA = 25% of Basic, Tax = 10% of Basic
+           - Universal Rates: Other Allowance = 10% of Basic, Health Insurance = 5% of Basic, Car Insurance = 3% of Basic.
+           - Gross Salary = Basic + DA + HRA + Other Allowance + Custom Allowances.
+           - Net Salary = Gross Salary - Tax - Health Insurance - Car Insurance.
+        7. DETAILED RESPONSES: Break things down logically using bullet points, headers, or numbered lists to make complex information easy to read and highly valuable.
+        8. SEAMLESS TOPIC SWITCHING: For questions outside of payroll, do not introduce yourself or tie it to payroll. Answer the prompt directly and accurately. Anticipate user needs and provide the best possible answer to any question.
+        9. MANDATORY HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
+        10. TONE: Always use a polite, helpful, and attractive tone, and include tasteful emojis.`;
 
       // INFINITE CHAT ENGINE:
       // To allow the user to chat infinitely without Google throwing "Quota Exceeded" errors,
@@ -193,9 +212,9 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
             <div>
               <h2 className="text-[#fd79a8] font-bold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(253,121,168,0.8)] leading-none">PayrollBot</h2>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${((geminiApiKey && geminiApiKey.length > 5) || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]' : 'bg-red-500 shadow-[0_0_5px_#ef4444]'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${((geminiApiKey && geminiApiKey.length > 5) || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]' : 'bg-red-500 shadow-[0_0_5px_#ef4444]'}`}></div>
                 <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">
-                  {((geminiApiKey && geminiApiKey.length > 5) || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'AI Online' : 'AI Offline (No Key)'}
+                  {((geminiApiKey && geminiApiKey.length > 5) || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'AI Online' : 'AI Offline (No Key)'}
                 </span>
               </div>
             </div>
@@ -289,9 +308,6 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
             >
               <svg className={`drop-shadow-[0_0_6px_rgba(255,255,255,0.9)] transition-all ${!input.trim() || isTyping ? 'opacity-60' : 'opacity-100 scale-110'}`} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
-          </div>
-          <div className="text-center mt-2 text-[10px] text-white/30">
-            PayrollBot can make mistakes. Verify important calculations.
           </div>
         </div>
       </motion.div>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, Lock, FileText, Check } from 'lucide-react';
 import { PayrollSettings } from '../types';
+import { HARDCODED_GEMINI_KEY, ADMIN_PASSWORD } from '../config';
 
 interface SettingsModalProps {
   settings: PayrollSettings;
@@ -11,6 +12,9 @@ interface SettingsModalProps {
 
 export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps) {
   const [localSettings, setLocalSettings] = useState<PayrollSettings>(settings);
+  const [showFileUnlock, setShowFileUnlock] = useState(false);
+  const [filePassword, setFilePassword] = useState('');
+  const [isFileUnlocked, setIsFileUnlocked] = useState(false);
 
   const handleChange = (key: keyof PayrollSettings, value: string) => {
     const num = parseFloat(value);
@@ -69,6 +73,128 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
         />
     );
   };
+
+  if (showFileUnlock) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-blue-500/20 backdrop-blur-md" onClick={() => setShowFileUnlock(false)}></div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative bg-[#1e1e1e] border-2 border-blue-500/50 rounded-xl w-full max-w-2xl flex flex-col shadow-[0_0_50px_rgba(59,130,246,0.3)] overflow-hidden font-mono"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* File Header */}
+          <div className="flex items-center bg-[#2d2d2d] border-b border-white/10 px-4 py-2">
+            <div className="flex gap-2 mr-4">
+              <div className="w-3 h-3 rounded-full bg-red-500 cursor-pointer" onClick={() => setShowFileUnlock(false)}></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div className="text-white/50 text-xs flex items-center gap-2">
+              <FileText size={14} /> api_key_secret.txt
+            </div>
+          </div>
+
+          {!isFileUnlocked ? (
+            <div className="p-12 flex flex-col items-center justify-center min-h-[300px]">
+              <Lock size={48} className="text-blue-500 mb-6" />
+              <h2 className="text-blue-400 font-bold mb-2">Protected File</h2>
+              <p className="text-blue-400/50 text-xs mb-6 text-center max-w-sm">
+                Enter the password you set in the settings to unlock this file.
+              </p>
+              <input
+                type="password"
+                value={filePassword}
+                onChange={(e) => setFilePassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (filePassword === (ADMIN_PASSWORD || '')) {
+                      setIsFileUnlocked(true);
+                      setFilePassword('');
+                    } else {
+                      alert("Incorrect password!");
+                    }
+                  }
+                }}
+                placeholder="Enter Password..."
+                className="bg-black/50 border border-white/20 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-blue-500 text-center tracking-widest"
+                autoFocus
+              />
+              <div className="flex gap-4 mt-4">
+                <button 
+                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-lg text-sm transition-colors"
+                  onClick={() => setShowFileUnlock(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-lg text-sm transition-colors"
+                  onClick={() => {
+                    if (filePassword === (ADMIN_PASSWORD || '')) {
+                      setIsFileUnlocked(true);
+                      setFilePassword('');
+                    } else {
+                      alert("Incorrect password!");
+                    }
+                  }}
+                >
+                  Unlock
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col p-6 min-h-[400px]">
+              <textarea 
+                value={localSettings.geminiApiKey || HARDCODED_GEMINI_KEY || ''}
+                onChange={(e) => {
+                  setLocalSettings(prev => ({ ...prev, geminiApiKey: e.target.value }));
+                }}
+                placeholder="Paste your Gemini API Key here...\nExample: AIzaSyD-..."
+                className={`flex-1 w-full bg-black/40 text-blue-400 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-blue-500/50 resize-none font-mono text-sm shadow-inner`}
+              />
+              
+              <div className="flex justify-end mt-4 gap-4">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const keyToTest = localSettings.geminiApiKey || HARDCODED_GEMINI_KEY;
+                    if (!keyToTest) {
+                      alert("Please paste a key first!");
+                      return;
+                    }
+                    try {
+                      alert("⏳ Verifying your API Key with Google... Please wait.");
+                      const cleanKey = (keyToTest || '').trim();
+                      if (!cleanKey) throw new Error("Key is empty. Please paste a valid key.");
+                      const { GoogleGenAI } = await import("@google/genai");
+                      const ai = new GoogleGenAI({ apiKey: cleanKey });
+                      const response = await ai.models.generateContent({ model: "gemini-3-flash-preview", contents: "hi" });
+                      if (response.text) {
+                        alert("✅ TOTAL VICTORY! Your key is 100% working and cleaned.");
+                        setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
+                      }
+                    } catch (e: any) {
+                      alert("❌ Key Error: " + (e.message || "Unknown error"));
+                    }
+                  }}
+                  className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] font-bold px-6 py-2 rounded-lg text-sm transition-colors border border-[#fd79a8]/40"
+                >
+                  Test Key Connection
+                </button>
+                <button
+                  onClick={() => setShowFileUnlock(false)}
+                  className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                >
+                  <Check size={16} /> Save & Close File
+                </button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -202,63 +328,32 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
 
           <div className="space-y-3 col-span-2">
             <h3 className="text-[#00ffcc] font-semibold mb-1 border-b border-white/10 pb-1">AI Assistant Settings</h3>
+            
             <div className="bg-[#fd79a8]/5 p-4 rounded-2xl border-2 border-[#fd79a8]/30 shadow-[0_0_20px_rgba(253,121,168,0.1)]">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-[#fd79a8] text-[10px] uppercase font-black tracking-widest">Gemini AI Key</label>
-                <div className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${localSettings.geminiApiKey?.length ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                  {localSettings.geminiApiKey?.length ? 'Key Present' : 'Key Missing'}
+                <label className="text-[#fd79a8] text-[10px] uppercase font-black tracking-widest">Protected Textfile</label>
+                <div className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${localSettings.geminiApiKey?.length || HARDCODED_GEMINI_KEY ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {localSettings.geminiApiKey?.length || HARDCODED_GEMINI_KEY ? 'Key Loaded' : 'Key Missing'}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  value={localSettings.geminiApiKey || ''}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, geminiApiKey: e.target.value }))}
-                  className="flex-1 bg-black/60 border border-[#fd79a8]/40 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#fd79a8] focus:ring-2 focus:ring-[#fd79a8]/50 transition-all font-mono"
-                  placeholder="Paste GEMINI_API_KEY here..."
-                />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!localSettings.geminiApiKey) {
-                      alert("Please paste a key first!");
-                      return;
-                    }
-                    try {
-                      alert("⏳ Verifying your API Key with Google... Please wait.");
-                      
-                      const cleanKey = (localSettings.geminiApiKey || '').trim();
-                      
-                      if (!cleanKey) {
-                        throw new Error("Key is empty. Please paste a valid key.");
-                      }
-
-                      const { GoogleGenAI } = await import("@google/genai");
-                      const ai = new GoogleGenAI({ apiKey: cleanKey });
-                      
-                      // Official SDK pattern for content generation
-                      const response = await ai.models.generateContent({
-                        model: "gemini-3-flash-preview",
-                        contents: "hi"
-                      });
-                      
-                      if (response.text) {
-                        alert("✅ TOTAL VICTORY! Your key is 100% working and cleaned.");
-                        setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
-                      }
-                    } catch (e: any) {
-                      console.error("SDK Test Error:", e);
-                      alert("❌ Key Error: " + (e.message || "Unknown error"));
-                    }
-                  }}
-                  className="bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-2 rounded-xl border border-[#fd79a8]/40 font-bold text-[10px] uppercase transition-all"
-                >
-                  Test
-                </button>
-              </div>
-              <p className="text-[10px] text-white/40 mt-3 italic leading-relaxed">
-                <strong className="text-[#fd79a8]">IMPORTANT:</strong> GitHub Hosting cannot see AI Studio secrets. You MUST paste the key <span className="underline uppercase font-bold">HERE</span> in the app settings, not in the sidebar menu.
-              </p>
+              <p className="text-xs text-white/60 mb-3">Your API Key is safely stored inside a protected text file. Click below to view or edit it.</p>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  if (!ADMIN_PASSWORD) {
+                    setIsFileUnlocked(true);
+                  } else {
+                    setIsFileUnlocked(false);
+                    setFilePassword('');
+                  }
+                  setShowFileUnlock(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-[#fd79a8]/20 hover:bg-[#fd79a8]/40 text-[#fd79a8] px-4 py-3 rounded-xl border border-[#fd79a8]/40 font-bold text-[12px] uppercase transition-all shadow-[0_0_15px_rgba(253,121,168,0.2)]"
+              >
+                {ADMIN_PASSWORD ? <Lock size={16} /> : <FileText size={16} />} 
+                Open api_key_secret.txt
+              </button>
             </div>
           </div>
         </div>
