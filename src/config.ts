@@ -5,6 +5,6 @@
 // 
 // If you still want to hardcode it for immediate testing, paste your key between the quotes below:
 
-export const HARDCODED_GEMINI_KEY = "AIzaSyBLVVCjUMfWagixY_K-CgsZsmuHGATgpe4";
+export const HARDCODED_GEMINI_KEY = "";
 export const ADMIN_PASSWORD = "20071120"; // Change this password to protect your settings
 
