@@ -8,6 +8,8 @@ interface ChatBotProps {
   onClose: () => void;
   employeesContext: any[];
   geminiApiKey?: string;
+  persistentMessages?: Message[];
+  setPersistentMessages?: (msgs: Message[]) => void;
 }
 
 interface Message {
@@ -15,11 +17,18 @@ interface Message {
   content: string;
 }
 
-export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProps) {
-  const [messages, setMessages] = useState<Message[]>([{
+export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMessages, setPersistentMessages }: ChatBotProps) {
+  const [messages, setMessages] = useState<Message[]>(persistentMessages || [{
     role: 'model',
     content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
   }]);
+
+  // Sync to parent
+  useEffect(() => {
+    if (setPersistentMessages) {
+      setPersistentMessages(messages);
+    }
+  }, [messages, setPersistentMessages]);
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -73,6 +82,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       }));
 
       const systemInstruction = `You are a super-intelligent, max-level genius AI assistant named PayrollBot. 
+        Current Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
         Context: The user has employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
         
         CRITICAL RULES:
@@ -106,11 +116,10 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         9. MANDATORY HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
         10. TONE: Always use a polite, helpful, attractive tone, and include tasteful emojis.`;
 
+
       // INFINITE CHAT ENGINE:
-      // To allow the user to chat infinitely without Google throwing "Quota Exceeded" errors,
-      // we strictly limit the background payload to the last 6 messages. 
-      // The user still sees the full history on their screen, but the API payload stays tiny.
-      const recentMessages = messages.slice(-6);
+      // We increased the history limit to 40 for better long-term memory.
+      const recentMessages = messages.slice(-40);
       
       const history = recentMessages.filter(msg => msg.role !== 'model' || msg.content !== "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!").map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
@@ -119,7 +128,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
       // CORRECT CHAT PATTERN (from gemini-api skill)
       const chat = ai.chats.create({
-        model: "gemini-2.5-flash",
+        model: "gemini-3-flash-preview",
         history: history,
         config: { systemInstruction }
       });
@@ -230,6 +239,19 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button 
+              onClick={() => {
+                if (confirm("Clear chat history?")) {
+                  setMessages([{
+                    role: 'model',
+                    content: "👋 Chat cleared. I'm ready to start fresh! Ask me anything."
+                  }]);
+                }
+              }}
+              className="text-[10px] bg-white/10 hover:bg-white/20 text-white/70 px-2 py-1 rounded-lg border border-white/10 uppercase font-black tracking-tighter"
+            >
+              Clear Memory
+            </button>
             <button 
               onClick={onClose}
               className="w-8 h-8 rounded-full flex items-center justify-center text-[#ff3366] hover:bg-[#ff4757]/20 transition-colors font-bold shadow-sm"

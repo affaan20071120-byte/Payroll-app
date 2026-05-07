@@ -169,7 +169,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                       if (!cleanKey) throw new Error("Key is empty. Please paste a valid key.");
                       const { GoogleGenAI } = await import("@google/genai");
                       const ai = new GoogleGenAI({ apiKey: cleanKey });
-                      const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: "hi" });
+                      const response = await ai.models.generateContent({ model: "gemini-3-flash-preview", contents: "hi" });
                       if (response.text) {
                         alert("✅ TOTAL VICTORY! Your key is 100% working and cleaned.");
                         setLocalSettings(prev => ({ ...prev, geminiApiKey: cleanKey }));
