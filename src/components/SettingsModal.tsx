@@ -146,7 +146,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
           ) : (
             <div className="flex flex-col p-6 min-h-[400px]">
               <textarea 
-                value={localSettings.geminiApiKey || HARDCODED_GEMINI_KEY || ''}
+                value={localSettings.geminiApiKey !== undefined ? localSettings.geminiApiKey : (HARDCODED_GEMINI_KEY || '')}
                 onChange={(e) => {
                   setLocalSettings(prev => ({ ...prev, geminiApiKey: e.target.value }));
                 }}
