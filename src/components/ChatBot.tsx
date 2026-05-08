@@ -8,17 +8,20 @@ interface ChatBotProps {
   onClose: () => void;
   employeesContext: any[];
   geminiApiKey?: string;
+  persistentMessages: Message[];
+  setPersistentMessages: (msgs: Message[]) => void;
 }
 
 interface Message {
-  role: 'user' | 'model'; // Changed from 'assistant' to 'model' for compatibility with SDK
+  role: 'user' | 'model';
   content: string;
 }
 
-export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProps) {
-  const [messages, setMessages] = useState<Message[]>([{
+export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMessages, setPersistentMessages }: ChatBotProps) {
+  // DISPLAY messages (what the user sees - resets every time chat is opened)
+  const [displayMessages, setDisplayMessages] = useState<Message[]>([{
     role: 'model',
-    content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
+    content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. Ask me anything!"
   }]);
 
   const [input, setInput] = useState('');
@@ -33,14 +36,15 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         behavior: 'smooth'
       });
     }
-  }, [messages, isTyping]);
+  }, [displayMessages, isTyping]);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
     
     const userMsg = input.trim();
+    const newUserMsg: Message = { role: 'user', content: userMsg };
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setDisplayMessages(prev => [...prev, newUserMsg]);
     
     setIsTyping(true);
     
@@ -49,21 +53,12 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       const rawKey = geminiApiKey || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
       const apiKey = (rawKey || '').trim();
       
-      console.log("ChatBot is using API Key of length: ", apiKey.length, " Starts with: ", apiKey.substring(0, 5));
-
       if (!apiKey) {
-        setMessages(prev => [...prev, { role: 'model', content: "❌ **API Key Missing!** Please go to Settings (⚙️) and paste your Gemini API Key in the 'api_key_secret.txt' file." }]);
+        setDisplayMessages(prev => [...prev, { role: 'model', content: "❌ **API Key Missing!** Please go to Settings (⚙️) and paste your Gemini API Key." }]);
         setIsTyping(false);
         return;
       }
       
-      if (userMsg.toLowerCase() === "debug key") {
-         setMessages(prev => [...prev, { role: 'model', content: `DEBUG INFO: The API Key ChatBot is using starts with **${apiKey.substring(0, 5)}...** and ends with **...${apiKey.substring(apiKey.length - 5)}** (Length: ${apiKey.length}). If this is your OLD key, go back to settings, paste the new one, and hit SAVE CHANGES!` }]);
-         setIsTyping(false);
-         return;
-      }
-
-      // CORRECT SDK INITIALIZATION (from gemini-api skill)
       const ai = new GoogleGenAI({ apiKey });
       
       const cleanEmployees = employeesContext?.map((e: any) => ({
@@ -74,57 +69,38 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
       const systemInstruction = `You are a super-intelligent, max-level genius AI assistant named PayrollBot. 
         Current Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
+        Date Awareness: You are fully aware of all dates in the 21st century and beyond. Use the current date provided above for all time-relative calculations.
         Context: The user has employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
         
+        HIDDEN MEMORY MODE: The user has asked that older messages from this session stay "hidden" from the UI but remain in your memory. 
+        If they ask about something they said earlier in this session, answer using your memory history.
+
         CRITICAL RULES:
-        1. COMPREHENSIVE KNOWLEDGE & ACCURACY: You MUST answer ALL questions correctly. Whether the question is about payroll, general knowledge, math, science, programming, or anything else, you must provide a highly accurate, deep, and brilliant answer. You are a max-level genius. You must NEVER make calculation or factual mistakes. Double-check all logic step-by-step.
-        2. GREETINGS: If the user simply says "hi", "hello", or greets you, warmly respond with an attractive, professional greeting WITHOUT mentioning your developer. Example: "Hello! 👋 I am **PayrollBot**. How can I assist you with your payroll and HR needs today?"
-        3. DEVELOPER INQUIRIES: ONLY if the user explicitly asks "who created you" or "who is your developer", you may answer that you were developed by **Mohammed Affaan**. Do NOT volunteer this information otherwise.
-        4. APP AWARENESS: You are an expert on this exact Payroll Application. You know all of its features: Add Employee, Edit Employee, Delete Employee, Hide/Show Table, Export to PDF, Export to Excel (CSV), Sort Employees, Stats (Metrics), Live Data Graph, Salary Breakdown, Settings (where the API key is configured), and this ChatBot. You can explain how to use any of these features.
-        5. STRICT UI COLOR KNOWLEDGE: You are looking directly at this app. If the user asks about the color of ANY button (e.g. "what is the color of edit button", "add button", "delete button"), you MUST strictly reply with the exact colors used in this app's sidebar. You MUST NEVER give generic UI or design advice about what colors are "commonly used". You strictly describe THIS app. Colors:
-           - Add Employee / add: Cyan (#00d2ff)
-           - Edit Employee / edit: Orange (#ff6b35)
-           - Delete / delete: Red (#ff003c)
-           - Hide Table / Show Table: Yellow/Mango (#ffa502)
-           - Export PDF: Purple (#9b59b6)
-           - Export Excel (CSV): Green (#20bf6b)
-           - Sort Employees: Bright Blue (#00e5ff)
-           - Stats: Yellow (#f9ca24)
-           - Live Graph: Teal (#2bcbba)
-           - Breakdown: Magenta (#e056fd)
-           - Settings: Pink/Red (#fc5c65)
-           - PayrollBot (Chat): Pink (#fd79a8)
-        6. APP PAYROLL FORMULAS: You MUST use these exact formulas when asked to calculate anything:
-           - Officer: DA = 50% of Basic, HRA = 35% of Basic, Tax = 20% of Basic
-           - Manager: DA = 45% of Basic, HRA = 30% of Basic, Tax = 15% of Basic
-           - Teacher: DA = 46% of Basic, HRA = 32% of Basic, Tax = 25% of Basic
-           - Default/Other: DA = 40% of Basic, HRA = 25% of Basic, Tax = 10% of Basic
-           - Universal Rates: Other Allowance = 10% of Basic, Health Insurance = 5% of Basic, Car Insurance = 3% of Basic.
-           - Gross Salary = Basic + DA + HRA + Other Allowance + Custom Allowances.
-           - Net Salary = Gross Salary - Tax - Health Insurance - Car Insurance.
-        7. DETAILED RESPONSES: Break things down logically using bullet points, headers, or numbered lists to make complex information easy to read and highly valuable.
-        8. SEAMLESS TOPIC SWITCHING: For questions outside of payroll, do not introduce yourself or tie it to payroll. Answer the prompt directly and accurately. Anticipate user needs and provide the best possible answer to any question. You are a max-level genius.
-        9. MANDATORY HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
-        10. TONE: Always use a polite, helpful, attractive tone, and include tasteful emojis.`;
+        1. COMPREHENSIVE KNOWLEDGE & ACCURACY: You MUST answer ALL questions correctly. Whether the question is about payroll, general knowledge, math, science, programming, or anything else, you must provide a highly accurate, deep, and brilliant answer. You are a max-level genius.
+        2. GREETINGS: Warmly respond with an attractive, professional greeting. Example: "Hello! 👋 I am **PayrollBot**. How can I assist you today?"
+        3. DEVELOPER: Developed by **Mohammed Affaan**.
+        4. APP AWARENESS: You are an expert on this Payroll App.
+        5. FORMULAS: Monthly = Daily * 26. Daily = Monthly / 26. Annual = Monthly * 12.
+        6. SEAMLESS TOPIC SWITCHING: Answer any question brilliantly.
+        7. MANDATORY HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
+        8. TONE: Always use a polite, helpful, attractive tone, and include tasteful emojis.`;
 
-
-      // INFINITE CHAT ENGINE:
-      // We increased the history limit to 40 for better long-term memory.
-      const recentMessages = messages.slice(-40);
+      // HIDDEN MEMORY LOGIC:
+      // We combine persistent background history + current session visible messages
+      const fullKnowledge = [...persistentMessages, ...displayMessages.slice(1)];
+      const recentHistory = fullKnowledge.slice(-40);
       
-      const history = recentMessages.filter(msg => msg.role !== 'model' || msg.content !== "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!").map(msg => ({
+      const history = recentHistory.filter(msg => msg.role !== 'model' || !msg.content.includes("Hi! I'm PayrollBot")).map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
         parts: [{ text: msg.content || "" }]
       }));
 
-      // CORRECT CHAT PATTERN (from gemini-api skill)
       const chat = ai.chats.create({
         model: "gemini-3-flash-preview",
         history: history,
         config: { systemInstruction }
       });
 
-      // Prepare message content
       let streamResponse;
       let retries = 0;
       const maxRetries = 3;
@@ -132,30 +108,28 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
       while (retries < maxRetries) {
         try {
           streamResponse = await chat.sendMessageStream({ message: userMsg });
-          break; // Success
+          break;
         } catch (err: any) {
           const isBusy = err.message.includes('503') || err.message.includes('high demand') || err.message.includes('UNAVAILABLE');
           if (isBusy && retries < maxRetries - 1) {
             retries++;
-            const backoffTime = Math.pow(2, retries) * 1000;
-            console.warn(`Gemini busy, retrying in ${backoffTime}ms (attempt ${retries}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
             continue;
           }
-          throw err; // Not busy error or out of retries
+          throw err;
         }
       }
       
       setIsTyping(false);
-      setMessages(prev => [...prev, { role: 'model', content: "" }]);
+      setDisplayMessages(prev => [...prev, { role: 'model', content: "" }]);
       
-      if (!streamResponse) throw new Error("Failed to get response after multiple retries.");
+      if (!streamResponse) throw new Error("Failed to get response.");
 
       for await (const chunk of streamResponse) {
         const chunkText = chunk.text;
         if (chunkText) {
           fullText += chunkText;
-          setMessages(prev => {
+          setDisplayMessages(prev => {
             const newMessages = [...prev];
             newMessages[newMessages.length - 1].content = fullText;
             return newMessages;
@@ -163,42 +137,25 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
         }
       }
 
+      // Sync to shared memory in background
+      setPersistentMessages([...persistentMessages, newUserMsg, { role: 'model', content: fullText }]);
+
     } catch (err: any) {
       setIsTyping(false);
       const errorMsg = err.message || "";
+      if (errorMsg.includes('JSON') && fullText.length > 0) return;
       
-      // Suppress annoying JSON/Steam errors if we already got the text successfully
-      if (errorMsg.includes('JSON') && fullText.length > 0) {
-        console.warn("Stream cleanly cut off ignored", err);
-        return;
-      }
-      
-      // Cleanly handle 503 Server Overload / High Demand
-      if (errorMsg.includes('503') || errorMsg.includes('high demand') || errorMsg.includes('UNAVAILABLE')) {
-        setMessages(prev => [...prev, { role: 'model', content: "⚠️ **Google AI Servers Busy:** The Gemini AI model is currently experiencing a temporary spike in high demand globally. Please wait a few seconds and try again. 🔄" }]);
-        return;
-      }
-      
-      // Cleanly handle 429 Quota Exceeded / Rate Limit
-      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota') || errorMsg.includes('rate limit')) {
-        setMessages(prev => [...prev, { role: 'model', content: "⚠️ **Free Tier Limit Reached:** You have exceeded the free tier quota for the Gemini API key you provided. Please check your billing details or wait for your daily quota to reset. 💸" }]);
-        return;
-      }
-
-      // Hide the ugly JSON wrapper if Google sends it
       let readableError = errorMsg;
       try {
         if (errorMsg.startsWith('{')) {
            const parsed = JSON.parse(errorMsg);
            if (parsed.error && parsed.error.message) {
-             readableError = typeof parsed.error.message === 'string' ? parsed.error.message : JSON.stringify(parsed.error.message);
+             readableError = parsed.error.message;
            }
         }
-      } catch (e) {
-        // Not JSON, ignore
-      }
+      } catch (e) {}
 
-      setMessages(prev => [...prev, { role: 'model', content: `⚠️ **Error:** ${readableError}` }]);
+      setDisplayMessages(prev => [...prev, { role: 'model', content: `⚠️ **Error:** ${readableError}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -222,31 +179,27 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
             <div>
               <h2 className="text-[#fd79a8] font-bold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(253,121,168,0.8)] leading-none">PayrollBot</h2>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${((geminiApiKey && geminiApiKey.length > 5) || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]' : 'bg-red-500 shadow-[0_0_5px_#ef4444]'}`}></div>
-                <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">
-                  {((geminiApiKey && geminiApiKey.length > 5) || HARDCODED_GEMINI_KEY || (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY)) ? 'AI Online' : 'AI Offline (No Key)'}
-                </span>
+                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]"></div>
+                <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">AI Online</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => {
-                if (confirm("Clear chat history?")) {
-                  setMessages([{
+                if (confirm("Clear ALL background memory and current chat?")) {
+                  setDisplayMessages([{
                     role: 'model',
-                    content: "👋 Chat cleared. I'm ready to start fresh! Ask me anything."
+                    content: "👋 Brain wiped! I've forgotten everything from this session."
                   }]);
+                  setPersistentMessages([]);
                 }
               }}
               className="text-[10px] bg-white/10 hover:bg-white/20 text-white/70 px-2 py-1 rounded-lg border border-white/10 uppercase font-black tracking-tighter"
             >
-              Clear Memory
+              Wipe Memory
             </button>
-            <button 
-              onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#ff3366] hover:bg-[#ff4757]/20 transition-colors font-bold shadow-sm"
-            >
+            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[#ff3366] hover:bg-[#ff4757]/20 transition-colors font-bold">
               ✕
             </button>
           </div>
@@ -254,82 +207,42 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProp
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth custom-scrollbar" ref={scrollRef}>
           <AnimatePresence initial={false}>
-            {messages.map((m, i) => (
+            {displayMessages.map((m, i) => (
               <motion.div 
                 key={i} 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
-                  className={`max-w-[85%] p-4 text-[15px] font-medium leading-relaxed prose prose-invert prose-p:leading-relaxed prose-pre:bg-black/20 ${
-                    m.role === 'user' 
-                      ? 'bg-gradient-to-br from-[#0080ff] to-[#0056d6] text-white rounded-2xl rounded-br-sm shadow-[0_0_20px_rgba(0,128,255,0.6)] [text-shadow:0_0_8px_rgba(255,255,255,0.4)]'
-                      : 'bg-gradient-to-br from-[#2a1b32] to-[#1a1a2e] text-[#e2e8f0] border border-[#fd79a8]/50 rounded-2xl rounded-bl-sm shadow-[0_0_30px_rgba(253,121,168,0.3)] [text-shadow:0_0_4px_rgba(253,121,168,0.3)]'
-                  }`}
-                >
-                  {m.role === 'user' ? (
-                    <div>{m.content}</div>
-                  ) : (
-                    <div className="markdown-body">
-                       <Markdown
-                         components={{
-                           strong: ({node, ...props}) => <strong className="text-[#fd79a8] drop-shadow-[0_0_8px_rgba(253,121,168,0.6)] font-bold" {...props} />,
-                           ul: ({node, ...props}) => <ul className="list-disc list-outside pl-5 my-2 space-y-1" {...props} />,
-                           ol: ({node, ...props}) => <ol className="list-decimal list-outside pl-5 my-2 space-y-1" {...props} />,
-                           li: ({node, ...props}) => <li className="text-[#e2e8f0] marker:text-[#fd79a8]" {...props} />,
-                           p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
-                         }}
-                       >{m.content}</Markdown>
-                    </div>
-                  )}
+                <div className={`max-w-[85%] p-4 text-[15px] font-medium leading-relaxed prose prose-invert ${m.role === 'user' ? 'bg-[#0080ff] rounded-2xl rounded-br-sm' : 'bg-[#1a1a2e] border border-[#fd79a8]/50 rounded-2xl rounded-bl-sm'}`}>
+                  {m.role === 'user' ? <div>{m.content}</div> : <div className="markdown-body"><Markdown components={{ strong: ({node, ...props}) => <strong className="text-[#fd79a8]" {...props} /> }}>{m.content}</Markdown></div>}
                 </div>
               </motion.div>
             ))}
             {isTyping && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="flex justify-start"
-              >
-                <div className="max-w-[85%] p-4 bg-white/5 text-[#fd79a8] border border-[#fd79a8]/30 rounded-2xl rounded-bl-sm flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-2 h-2 bg-[#fd79a8] rounded-full" />
-                    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-2 h-2 bg-[#fd79a8] rounded-full" />
-                    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-2 h-2 bg-[#fd79a8] rounded-full" />
-                  </div>
+              <div className="flex justify-start">
+                <div className="p-4 bg-white/5 text-[#fd79a8] border border-[#fd79a8]/30 rounded-2xl rounded-bl-sm flex gap-1">
+                   <div className="w-2 h-2 bg-[#fd79a8] rounded-full animate-bounce" />
+                   <div className="w-2 h-2 bg-[#fd79a8] rounded-full animate-bounce [animation-delay:0.2s]" />
+                   <div className="w-2 h-2 bg-[#fd79a8] rounded-full animate-bounce [animation-delay:0.4s]" />
                 </div>
-              </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </div>
 
         <div className="p-5 border-t border-white/10 bg-black/20 rounded-b-3xl">
-          <div className="relative flex items-end bg-[#16213e] border-2 border-[#fd79a8] rounded-2xl shadow-[0_0_30px_rgba(253,121,168,0.7)] focus-within:border-white focus-within:shadow-[0_0_50px_rgba(253,121,168,1)] transition-all overflow-hidden p-1">
+          <div className="relative flex items-end bg-[#16213e] border-2 border-[#fd79a8] rounded-2xl p-1 overflow-hidden">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Ask PayrollBot..."
-              className="flex-1 bg-transparent px-4 py-3 min-h-[48px] max-h-[140px] text-[16px] font-bold text-white placeholder-white/60 focus:outline-none resize-none custom-scrollbar [text-shadow:0_0_8px_#fd79a8,0_0_15px_#0080ff] transition-all"
+              className="flex-1 bg-transparent px-4 py-3 min-h-[48px] max-h-[140px] text-white focus:outline-none resize-none"
               rows={1}
             />
-            <button 
-              onClick={handleSend}
-              disabled={!input.trim() || isTyping}
-              className={`m-2 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                !input.trim() || isTyping 
-                  ? 'bg-[#1a1a2e] text-[#fd79a8]/50 border border-[#fd79a8]/30 shadow-[0_0_15px_rgba(253,121,168,0.2)]' // Soft glowing even when disabled
-                  : 'bg-[#fd79a8] text-[#1a1a2e] shadow-[0_0_25px_#fd79a8,0_0_15px_#0080ff] hover:bg-white hover:shadow-[0_0_40px_#fff,0_0_25px_#fd79a8]' // Hyper glow when ready
-              }`}
-            >
-              <svg className={`drop-shadow-[0_0_6px_rgba(255,255,255,0.9)] transition-all ${!input.trim() || isTyping ? 'opacity-60' : 'opacity-100 scale-110'}`} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <button onClick={handleSend} disabled={!input.trim() || isTyping} className="m-2 w-10 h-10 bg-[#fd79a8] text-[#1a1a2e] rounded-xl flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
           </div>
         </div>

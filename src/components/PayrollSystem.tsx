@@ -60,6 +60,12 @@ export function PayrollSystem() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isGraphOpen, setIsGraphOpen] = useState(false);
   
+  // SESSION-ONLY CHAT MEMORY (Wipes on refresh, but stays during session)
+  const [chatHistory, setChatHistory] = useState<any[]>([{
+    role: 'model',
+    content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
+  }]);
+
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteMode, setDeleteMode] = useState<'selected' | 'all'>('selected');
   
@@ -482,6 +488,8 @@ export function PayrollSystem() {
             onClose={() => setIsChatOpen(false)} 
             employeesContext={employees} 
             geminiApiKey={settings.geminiApiKey}
+            persistentMessages={chatHistory}
+            setPersistentMessages={setChatHistory}
           />
         )}
       </AnimatePresence>
