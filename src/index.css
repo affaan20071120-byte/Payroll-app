@@ -34,15 +34,18 @@
     50% { 
       box-shadow: 0 0 150px rgba(253, 121, 168, 0.7), inset 0 0 50px rgba(253, 121, 168, 0.4);
       border-color: rgba(255, 255, 255, 0.6);
-      transform: scale(1.003);
+      transform: scale(1.002);
     }
   }
 }
 
 @layer utilities {
   .neon-text-pink {
-    text-shadow: 0 0 12px #fd79a8, 0 0 25px #fd79a8, 1px 1px 2px rgba(0,0,0,0.8);
+    text-shadow: 0 0 15px #fd79a8, 0 0 35px #fd79a8, 1px 1px 2px rgba(0,0,0,0.8);
     -webkit-text-stroke: 0.3px rgba(255, 255, 255, 0.2);
+  }
+  .pink-glow-strong {
+    text-shadow: 0 0 20px #fd79a8, 0 0 40px rgba(253, 121, 168, 0.6);
   }
   .neon-text-blue {
     text-shadow: 0 0 12px #0080ff, 0 0 25px #0080ff, 1px 1px 2px rgba(0,0,0,0.8);

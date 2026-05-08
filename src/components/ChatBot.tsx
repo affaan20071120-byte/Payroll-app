@@ -69,21 +69,29 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMes
 
       const systemInstruction = `You are a super-intelligent, max-level genius AI assistant named PayrollBot. 
         Current Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
-        Date Awareness: You are fully aware of all dates in the 21st century and beyond. Use the current date provided above for all time-relative calculations.
         Context: The user has employees: ${cleanEmployees?.map(e => `${e.name} (${e.job}) - Net: ${e.net}`).join(', ') || 'None'}.
         
-        HIDDEN MEMORY MODE: The user has asked that older messages from this session stay "hidden" from the UI but remain in your memory. 
-        If they ask about something they said earlier in this session, answer using your memory history.
+        HIDDEN MEMORY MODE: Answer using your history if they ask about earlier messages.
 
-        CRITICAL RULES:
-        1. COMPREHENSIVE KNOWLEDGE & ACCURACY: You MUST answer ALL questions correctly. Whether the question is about payroll, general knowledge, math, science, programming, or anything else, you must provide a highly accurate, deep, and brilliant answer. You are a max-level genius.
-        2. GREETINGS: Warmly respond with an attractive, professional greeting. Example: "Hello! 👋 I am **PayrollBot**. How can I assist you today?"
-        3. DEVELOPER: Developed by **Mohammed Affaan**.
-        4. APP AWARENESS: You are an expert on this Payroll App.
-        5. FORMULAS: Monthly = Daily * 26. Daily = Monthly / 26. Annual = Monthly * 12.
-        6. SEAMLESS TOPIC SWITCHING: Answer any question brilliantly.
-        7. MANDATORY HIGHLIGHTING: You MUST extensively use Markdown bolding (**like this**) for ALL important keywords.
-        8. TONE: Always use a polite, helpful, attractive tone, and include tasteful emojis.`;
+        CRITICAL OUTPUT RULES:
+        1. MASTER OF LENGTH (LANGUAGE MASTERY): You are a linguistic genius. You MUST detect the requested depth/length in the user's phrasing:
+           - LONG/LENGTHY: If user uses "detailed", "lengthy", "long", "comprehensive", "in depth", "elaborate", "more", or "essay", provide a very thorough, deep, and extensive answer.
+           - SHORT/BRIEF: If user uses "short", "brief", "concise", "simple", "summary", or "in one line", provide a very direct, punchy, and short answer.
+           - DEFAULT: If no length is specified, be short and brilliant.
+        2. LISTS & BULLETS: 
+           - When asked for a "list", "summary", "points", or "steps", you MUST use proper Markdown list syntax (e.g., "- Point 1" or "* Point 2").
+           - Every single point MUST be on a **NEW LINE**. Never bunch points together in a single line.
+           - The bullet dots will appear pink and glowing in the UI.
+           - Otherwise, use strictly beautiful PARAGRAPHS.
+        3. GREETINGS: If user just greets you, respond ONLY with: "Hello! 👋 I am **PayrollBot**. How can I assist you today?"
+        4. HIGHLIGHTING: Bold (**term**) all important keywords. They shine pink.
+        5. FORMATTING: Follow official formats for letters and reports when asked.
+
+        GENERAL RULES:
+        1. GENIUS STATUS: Max-level AI. Answer everything correctly (Math, Science, English, Code, Payroll).
+        2. DEVELOPER: Developed by **Mohammed Affaan**.
+        3. TONE: Professional, attractive, and emoji-friendly.
+        4. FORMULAS: Monthly = Daily * 26. Daily = Monthly / 26. Annual = Monthly * 12.`;
 
       // HIDDEN MEMORY LOGIC:
       // We combine persistent background history + current session visible messages
@@ -218,8 +226,13 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMes
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] p-4 text-[15px] font-bold leading-relaxed prose prose-invert ${m.role === 'user' ? 'bg-[#0080ff] rounded-2xl rounded-br-sm shadow-[0_0_30px_rgba(0,128,255,0.4)] text-white border-[1.5px] border-white/20' : 'bg-[#1a1a2e]/90 backdrop-blur-xl border-2 border-[#fd79a8] rounded-2xl rounded-bl-sm shadow-[0_0_35px_rgba(253,121,168,0.4)] text-white'}`}>
-                  {m.role === 'user' ? <div>{m.content}</div> : <div className="markdown-body"><Markdown components={{ strong: ({node, ...props}) => <strong className="text-[#fd79a8] drop-shadow-[0_0_6px_#fd79a8] font-black underline underline-offset-2 decoration-[#fd79a8]/30" {...props} /> }}>{m.content}</Markdown></div>}
+                <div className={`max-w-[85%] p-4 text-[16px] font-bold leading-relaxed ${m.role === 'user' ? 'bg-[#0080ff] rounded-2xl rounded-br-sm shadow-[0_0_30px_rgba(0,128,255,0.4)] text-white border-[1px] border-white/30' : 'bg-[#1a1a2e] border-2 border-[#fd79a8] rounded-2xl rounded-bl-sm shadow-[0_0_20px_rgba(253,121,168,0.2)] text-white'}`}>
+                  {m.role === 'user' ? <div>{m.content}</div> : <div className="markdown-body"><Markdown components={{ 
+                    strong: ({node, ...props}) => <strong className="text-[#fd79a8] font-black pink-glow-strong" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc list-outside ml-6 space-y-4 mb-6" {...props} />,
+                    li: ({node, ...props}) => <li className="marker:text-[#fd79a8] pl-2 marker:font-black pink-glow-strong" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-5 last:mb-0" {...props} />,
+                  }}>{m.content}</Markdown></div>}
                 </div>
               </motion.div>
             ))}
@@ -235,8 +248,8 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMes
           </AnimatePresence>
         </div>
 
-        <div className="p-4 border-t-2 border-[#fd79a8]/40 bg-black/30 rounded-b-3xl">
-          <div className="relative flex items-end bg-[#16213e]/90 backdrop-blur-xl border-2 border-[#fd79a8] rounded-2xl p-1 overflow-hidden shadow-[0_0_40px_rgba(253,121,168,0.6)] focus-within:shadow-[0_0_70px_rgba(253,121,168,0.9)] focus-within:border-white transition-all duration-300">
+        <div className="p-4 border-t-2 border-[#fd79a8]/60 bg-black/50 rounded-b-3xl">
+          <div className="relative flex items-end bg-[#16213e] border-2 border-[#fd79a8] rounded-2xl p-1 overflow-hidden shadow-[0_0_60px_#fd79a8] focus-within:shadow-[0_0_100px_#fd79a8,0_0_20px_rgba(255,255,255,0.5)] focus-within:border-white transition-all duration-300">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
