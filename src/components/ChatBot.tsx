@@ -218,8 +218,8 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMes
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] p-4 text-[15px] font-black leading-relaxed prose prose-invert ${m.role === 'user' ? 'bg-[#0080ff] rounded-2xl rounded-br-sm shadow-[0_0_35px_rgba(0,128,255,0.6)] text-white neon-text-blue border-[1.5px] border-white/20' : 'bg-[#1a1a2e]/80 backdrop-blur-xl border-2 border-[#fd79a8] rounded-2xl rounded-bl-sm shadow-[0_0_40px_rgba(253,121,168,0.5)] text-white neon-text-pink'}`}>
-                  {m.role === 'user' ? <div>{m.content}</div> : <div className="markdown-body"><Markdown components={{ strong: ({node, ...props}) => <strong className="text-[#fd79a8] drop-shadow-[0_0_12px_#fd79a8] font-black underline underline-offset-4 decoration-[#fd79a8]/50 text-lg" {...props} /> }}>{m.content}</Markdown></div>}
+                <div className={`max-w-[85%] p-4 text-[15px] font-bold leading-relaxed prose prose-invert ${m.role === 'user' ? 'bg-[#0080ff] rounded-2xl rounded-br-sm shadow-[0_0_30px_rgba(0,128,255,0.4)] text-white border-[1.5px] border-white/20' : 'bg-[#1a1a2e]/90 backdrop-blur-xl border-2 border-[#fd79a8] rounded-2xl rounded-bl-sm shadow-[0_0_35px_rgba(253,121,168,0.4)] text-white'}`}>
+                  {m.role === 'user' ? <div>{m.content}</div> : <div className="markdown-body"><Markdown components={{ strong: ({node, ...props}) => <strong className="text-[#fd79a8] drop-shadow-[0_0_6px_#fd79a8] font-black underline underline-offset-2 decoration-[#fd79a8]/30" {...props} /> }}>{m.content}</Markdown></div>}
                 </div>
               </motion.div>
             ))}
@@ -242,7 +242,7 @@ export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMes
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Message PayrollBot..."
-              className="flex-1 bg-transparent px-4 py-3 min-h-[50px] max-h-[140px] text-white text-[16px] focus:outline-none resize-none placeholder:text-white/30 font-black drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+              className="flex-1 bg-transparent px-4 py-3 min-h-[50px] max-h-[140px] text-white text-[16px] focus:outline-none resize-none placeholder:text-white/30 font-bold drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
               rows={1}
             />
             <button onClick={handleSend} disabled={!input.trim() || isTyping} className="m-1.5 w-11 h-11 bg-[#fd79a8] text-[#1a1a2e] rounded-xl flex items-center justify-center shadow-[0_0_25px_#fd79a8] hover:shadow-[0_0_45px_#fd79a8] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none">
