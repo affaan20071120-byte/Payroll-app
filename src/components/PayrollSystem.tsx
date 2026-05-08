@@ -63,18 +63,6 @@ export function PayrollSystem() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteMode, setDeleteMode] = useState<'selected' | 'all'>('selected');
   
-  const [chatHistory, setChatHistory] = useState<any[]>(() => {
-    const saved = localStorage.getItem('payroll_chatbot_history');
-    return saved ? JSON.parse(saved) : [{
-      role: 'model',
-      content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
-    }];
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem('payroll_chatbot_history', JSON.stringify(chatHistory));
-  }, [chatHistory]);
-
   // Tabs state
   const [tabs, setTabs] = useState(() => {
     const saved = localStorage.getItem('payroll_tabs');
@@ -494,8 +482,6 @@ export function PayrollSystem() {
             onClose={() => setIsChatOpen(false)} 
             employeesContext={employees} 
             geminiApiKey={settings.geminiApiKey}
-            persistentMessages={chatHistory}
-            setPersistentMessages={setChatHistory}
           />
         )}
       </AnimatePresence>

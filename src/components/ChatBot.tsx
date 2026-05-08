@@ -8,8 +8,6 @@ interface ChatBotProps {
   onClose: () => void;
   employeesContext: any[];
   geminiApiKey?: string;
-  persistentMessages?: Message[];
-  setPersistentMessages?: (msgs: Message[]) => void;
 }
 
 interface Message {
@@ -17,18 +15,11 @@ interface Message {
   content: string;
 }
 
-export function ChatBot({ onClose, employeesContext, geminiApiKey, persistentMessages, setPersistentMessages }: ChatBotProps) {
-  const [messages, setMessages] = useState<Message[]>(persistentMessages || [{
+export function ChatBot({ onClose, employeesContext, geminiApiKey }: ChatBotProps) {
+  const [messages, setMessages] = useState<Message[]>([{
     role: 'model',
     content: "👋 Hi! I'm PayrollBot, your friendly AI assistant. I know the formulas and basic rules. Ask me anything!"
   }]);
-
-  // Sync to parent
-  useEffect(() => {
-    if (setPersistentMessages) {
-      setPersistentMessages(messages);
-    }
-  }, [messages, setPersistentMessages]);
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
